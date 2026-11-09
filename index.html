@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guada & Marco — 23.01.2027</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --cream:       #FAF7F2;
+      --cream-dark:  #F0EBE1;
+      --burgundy:    #6B1A2A;
+      --burgundy-lt: #8B2A3E;
+      --burgundy-xlt:#C07080;
+      --black:       #1A1A1A;
+      --charcoal:    #3A3A3A;
+      --gray:        #8A8A8A;
+      --white:       #FFFFFF;
+      --gold:        #C9A96E;
+
+      --ff-serif: 'Cormorant Garamond', Georgia, serif;
+      --ff-sans:  'Montserrat', system-ui, sans-serif;
+
+      --transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --shadow-soft: 0 4px 32px rgba(107,26,42,0.08);
+      --shadow-card: 0 2px 24px rgba(26,26,26,0.07);
+    }
+
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      background: var(--cream);
+      color: var(--black);
+      font-family: var(--ff-sans);
+      font-weight: 300;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ===== SCROLL ANIMATIONS ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100svh;
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 24px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 40%, rgba(107,26,42,0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 100% 80% at 20% 100%, rgba(107,26,42,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-ornament {
+      font-family: var(--ff-serif);
+      font-size: clamp(10px, 2vw, 14px);
+      letter-spacing: 0.35em;
+      color: var(--burgundy-xlt);
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      font-weight: 300;
+    }
+
+    .hero-divider {
+      width: 1px;
+      height: 56px;
+      background: linear-gradient(to bottom, transparent, var(--burgundy-xlt), transparent);
+      margin: 0 auto 32px;
+    }
+
+    .hero-names {
+      font-family: var(--ff-serif);
+      font-size: clamp(52px, 14vw, 110px);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--white);
+      line-height: 1;
+      letter-spacing: -0.01em;
+      margin-bottom: 20px;
+    }
+
+    .hero-names .ampersand {
+      color: var(--burgundy-xlt);
+      display: block;
+      font-size: 0.6em;
+      line-height: 1.1;
+    }
+
+    .hero-date {
+      font-family: var(--ff-sans);
+      font-size: clamp(11px, 2.5vw, 13px);
+      letter-spacing: 0.4em;
+      color: var(--cream-dark);
+      text-transform: uppercase;
+      margin-top: 20px;
+      font-weight: 400;
+    }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--gray);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+    }
+
+    .hero-scroll-hint svg {
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* ===== SECTION WRAPPER ===== */
+    .section {
+      padding: 80px 24px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--ff-sans);
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--burgundy);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .section-title {
+      font-family: var(--ff-serif);
+      font-size: clamp(32px, 8vw, 52px);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--black);
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    .section-rule {
+      width: 48px;
+      height: 1px;
+      background: var(--burgundy);
+      margin-bottom: 28px;
+    }
+
+    .section-body {
+      font-size: 15px;
+      color: var(--charcoal);
+      line-height: 1.8;
+    }
+
+    /* ===== COUNTDOWN ===== */
+    .countdown-wrap {
+      background: var(--black);
+      padding: 60px 24px;
+      text-align: center;
+    }
+
+    .countdown-label {
+      font-family: var(--ff-sans);
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--burgundy-xlt);
+      margin-bottom: 36px;
+      font-weight: 400;
+    }
+
+    .countdown-grid {
+      display: flex;
+      justify-content: center;
+      gap: clamp(16px, 5vw, 48px);
+      flex-wrap: nowrap;
+    }
+
+    .countdown-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .countdown-number {
+      font-family: var(--ff-serif);
+      font-size: clamp(44px, 12vw, 80px);
+      font-weight: 300;
+      color: var(--white);
+      line-height: 1;
+      min-width: 1ch;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+
+    .countdown-unit {
+      font-family: var(--ff-sans);
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gray);
+      font-weight: 400;
+    }
+
+    .countdown-sep {
+      font-family: var(--ff-serif);
+      font-size: clamp(32px, 8vw, 60px);
+      color: var(--burgundy);
+      line-height: 1;
+      padding-top: 4px;
+      font-weight: 300;
+    }
+
+    /* ===== INFO CARDS ===== */
+    .info-cards {
+      display: grid;
+      gap: 20px;
+      padding: 60px 24px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .info-card {
+      background: var(--white);
+      border: 1px solid var(--cream-dark);
+      border-radius: 2px;
+      padding: 32px 28px;
+      box-shadow: var(--shadow-card);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .info-card-icon {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--cream-dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--burgundy);
+    }
+
+    .info-card-label {
+      font-family: var(--ff-sans);
+      font-size: 9px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--burgundy);
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .info-card-title {
+      font-family: var(--ff-serif);
+      font-size: 22px;
+      font-weight: 400;
+      margin-bottom: 12px;
+      color: var(--black);
+    }
+
+    .info-card-body {
+      font-size: 14px;
+      color: var(--charcoal);
+      line-height: 1.75;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 28px;
+      font-family: var(--ff-sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: none;
+      border-radius: 1px;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--burgundy);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background: var(--burgundy-lt);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(107,26,42,0.3);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--burgundy);
+      border: 1px solid var(--burgundy);
+    }
+
+    .btn-outline:hover {
+      background: var(--burgundy);
+      color: var(--white);
+      transform: translateY(-1px);
+    }
+
+    .btn-dark {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    .btn-dark:hover {
+      background: var(--charcoal);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(26,26,26,0.25);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* ===== DRESS CODE ===== */
+    .dress-items {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .dress-item {
+      background: var(--cream-dark);
+      padding: 20px 16px;
+      text-align: center;
+      border-radius: 1px;
+    }
+
+    .dress-item-title {
+      font-family: var(--ff-serif);
+      font-size: 16px;
+      font-weight: 400;
+      margin-bottom: 8px;
+      color: var(--black);
+    }
+
+    .dress-item-body {
+      font-size: 12px;
+      color: var(--charcoal);
+      line-height: 1.6;
+    }
+
+    .dress-item-avoid {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--burgundy);
+      font-style: italic;
+    }
+
+    .palette-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      align-items: center;
+    }
+
+    .palette-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid rgba(26,26,26,0.1);
+      flex-shrink: 0;
+    }
+
+    .palette-label {
+      font-size: 11px;
+      color: var(--gray);
+      margin-left: 4px;
+    }
+
+    /* ===== RSVP ===== */
+    .rsvp-section {
+      background: var(--black);
+      padding: 80px 24px;
+    }
+
+    .rsvp-inner {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .rsvp-section .section-label { color: var(--burgundy-xlt); }
+    .rsvp-section .section-title { color: var(--white); }
+    .rsvp-section .section-rule  { background: var(--burgundy-xlt); }
+    .rsvp-section .section-body  { color: rgba(255,255,255,0.6); }
+
+    /* Guest name banner */
+    .guest-banner {
+      background: rgba(107,26,42,0.2);
+      border: 1px solid rgba(107,26,42,0.4);
+      border-radius: 2px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .guest-banner svg { color: var(--burgundy-xlt); flex-shrink: 0; }
+
+    .guest-banner-text {
+      font-family: var(--ff-serif);
+      font-size: 18px;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--white);
+    }
+
+    /* Form */
+    .rsvp-form { display: flex; flex-direction: column; gap: 20px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+
+    .form-label {
+      font-family: var(--ff-sans);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      font-weight: 400;
+    }
+
+    .form-label span.required { color: var(--burgundy-xlt); margin-left: 2px; }
+
+    .rsvp-radio-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .rsvp-radio-label {
+      display: block;
+      cursor: pointer;
+    }
+
+    .rsvp-radio-label input { display: none; }
+
+    .rsvp-radio-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 1px;
+      font-family: var(--ff-sans);
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      transition: all 0.25s ease;
+    }
+
+    .rsvp-radio-label input:checked + .rsvp-radio-box {
+      border-color: var(--burgundy);
+      background: rgba(107,26,42,0.3);
+      color: var(--white);
+    }
+
+    .rsvp-radio-box svg { flex-shrink: 0; }
+
+    .form-input, .form-textarea, .form-select {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 1px;
+      padding: 14px 16px;
+      font-family: var(--ff-sans);
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--white);
+      outline: none;
+      transition: border-color 0.25s ease;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+
+    .form-input::placeholder, .form-textarea::placeholder {
+      color: rgba(255,255,255,0.25);
+    }
+
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--burgundy);
+    }
+
+    .form-textarea { resize: vertical; min-height: 90px; }
+
+    .form-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B1A2A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+      cursor: pointer;
+    }
+
+    .form-select option { background: var(--black); color: var(--white); }
+
+    /* Companion block */
+    .companion-block {
+      border: 1px solid rgba(107,26,42,0.35);
+      border-radius: 2px;
+      padding: 24px;
+      background: rgba(107,26,42,0.1);
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .companion-block.visible { display: flex; }
+
+    .companion-block-title {
+      font-family: var(--ff-serif);
+      font-size: 18px;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    .companion-block-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* Companion radio inline */
+    .companion-radios {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Companion checkbox */
+    .companion-check-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .companion-check-label input[type="checkbox"] { display: none; }
+
+    .companion-check-box {
+      width: 20px;
+      height: 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      color: transparent;
+    }
+
+    .companion-check-label input:checked + .companion-check-box {
+      background: var(--burgundy);
+      border-color: var(--burgundy);
+      color: var(--white);
+    }
+
+    .companion-check-text {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.03em;
+    }
+
+    /* Companion detail block */
+    .companion-detail-block {
+      border: 1px solid rgba(107,26,42,0.35);
+      border-radius: 2px;
+      padding: 24px;
+      background: rgba(107,26,42,0.1);
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .companion-detail-block.visible { display: flex; }
+
+    .companion-detail-title {
+      font-family: var(--ff-serif);
+      font-size: 17px;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--white);
+    }
+
+    .companion-name-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 400px) {
+      .companion-name-row { grid-template-columns: 1fr; }
+    }
+
+    /* Success state */
+    .rsvp-success {
+      text-align: center;
+      padding: 40px 20px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .rsvp-success.visible { display: flex; }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 1px solid var(--burgundy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--burgundy-xlt);
+    }
+
+    .success-title {
+      font-family: var(--ff-serif);
+      font-size: 32px;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--white);
+    }
+
+    .success-body {
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+      max-width: 360px;
+      line-height: 1.7;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--black);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 48px 24px;
+      text-align: center;
+    }
+
+    .footer-names {
+      font-family: var(--ff-serif);
+      font-size: 28px;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+
+    .footer-date {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gray);
+      font-weight: 300;
+    }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--white);
+      color: var(--black);
+      padding: 14px 24px;
+      border-radius: 2px;
+      font-size: 13px;
+      font-weight: 400;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      z-index: 999;
+      transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+      white-space: nowrap;
+    }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ===== LOADING OVERLAY ===== */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 9999;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+
+    #loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .loader-name {
+      font-family: var(--ff-serif);
+      font-size: 36px;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--white);
+    }
+
+    .loader-bar {
+      width: 120px;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .loader-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--burgundy);
+      animation: load 1.2s ease forwards;
+    }
+
+    @keyframes load {
+      from { transform: scaleX(0); transform-origin: left; }
+      to   { transform: scaleX(1); transform-origin: left; }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      .dress-items { grid-template-columns: 1fr; }
+      .rsvp-radio-group { grid-template-columns: 1fr 1fr; }
+      .btn { font-size: 10px; padding: 13px 20px; }
+      .info-cards { padding: 48px 20px; }
+      .section { padding: 60px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-name">Guada & Marco</div>
+  <div class="loader-bar"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     HERO
+══════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-ornament reveal">Con amor, los invitamos</div>
+  <div class="hero-divider reveal reveal-delay-1"></div>
+
+  <h1 class="hero-names reveal reveal-delay-2">
+    Guada
+    <span class="ampersand">&</span>
+    Marco
+  </h1>
+
+  <p class="hero-date reveal reveal-delay-3">23 · Enero · 2027</p>
+
+  <div class="hero-scroll-hint">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <path d="M12 5v14M5 12l7 7 7-7"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     COUNTDOWN
+══════════════════════════════════════ -->
+<div class="countdown-wrap">
+  <p class="countdown-label reveal">Faltan</p>
+  <div class="countdown-grid" id="countdown">
+    <div class="countdown-item reveal reveal-delay-1">
+      <span class="countdown-number" id="cd-days">000</span>
+      <span class="countdown-unit">Días</span>
+    </div>
+    <div class="countdown-sep reveal reveal-delay-1">·</div>
+    <div class="countdown-item reveal reveal-delay-2">
+      <span class="countdown-number" id="cd-hours">00</span>
+      <span class="countdown-unit">Horas</span>
+    </div>
+    <div class="countdown-sep reveal reveal-delay-2">·</div>
+    <div class="countdown-item reveal reveal-delay-3">
+      <span class="countdown-number" id="cd-mins">00</span>
+      <span class="countdown-unit">Min</span>
+    </div>
+    <div class="countdown-sep reveal reveal-delay-3">·</div>
+    <div class="countdown-item reveal reveal-delay-4">
+      <span class="countdown-number" id="cd-secs">00</span>
+      <span class="countdown-unit">Seg</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     INFO CARDS (Lugar + Agenda + Dresscode)
+══════════════════════════════════════ -->
+<div class="info-cards">
+
+  <!-- LUGAR -->
+  <div class="info-card reveal">
+    <div class="info-card-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+    </div>
+    <p class="info-card-label">El lugar</p>
+    <h3 class="info-card-title">Espacio Azalia</h3>
+    <p class="info-card-body">
+      Nos encontramos en Espacio Azalia, un espacio único diseñado para celebrar los momentos más especiales de la vida.
+    </p>
+    <div class="btn-row">
+      <a href="https://share.google/wACPY7eP3f6OIPlRN" target="_blank" rel="noopener" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+        Cómo llegar
+      </a>
+    </div>
+  </div>
+
+  <!-- DRESS CODE -->
+  <div class="info-card reveal">
+    <div class="info-card-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+      </svg>
+    </div>
+    <p class="info-card-label">Dress Code</p>
+    <h3 class="info-card-title">Elegancia Formal</h3>
+    <p class="info-card-body" style="margin-bottom:16px;">
+      Queremos que todos brillen esa noche. El evento es de etiqueta formal. Por favor, reservá el blanco y los colores de novia para la homenajeada.
+    </p>
+    <div class="dress-items">
+      <div class="dress-item">
+        <p class="dress-item-title">Ellas</p>
+        <p class="dress-item-body">Vestido largo o formal, traje de pantalón elegante</p>
+        <p class="dress-item-avoid">Evitar: blanco, crema e ivory</p>
+      </div>
+      <div class="dress-item">
+        <p class="dress-item-title">Ellos</p>
+        <p class="dress-item-body">Traje con corbata o moño, smoking es bienvenido</p>
+        <p class="dress-item-avoid">Evitar: casual, jeans</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     RSVP
+══════════════════════════════════════ -->
+<section class="rsvp-section" id="rsvp">
+  <div class="rsvp-inner">
+
+    <p class="section-label reveal">Confirmación</p>
+    <h2 class="section-title reveal reveal-delay-1">¿Nos acompañás?</h2>
+    <div class="section-rule reveal reveal-delay-1"></div>
+    <p class="section-body reveal reveal-delay-2">
+      Tu respuesta nos ayuda a preparar una noche perfecta para todos. Por favor confirmá tu asistencia antes del <strong style="color:rgba(255,255,255,0.8);">23 de diciembre de 2026</strong>.
+    </p>
+
+    <!-- Guest banner (shown when link has ?id=) -->
+    <div class="guest-banner reveal reveal-delay-3" id="guest-banner" style="display:none; margin-top:28px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span class="guest-banner-text" id="guest-banner-text">Hola, invitado</span>
+    </div>
+
+    <!-- RSVP Form -->
+    <form class="rsvp-form reveal reveal-delay-3" id="rsvp-form" style="margin-top:32px;" onsubmit="submitRSVP(event)">
+
+      <!-- ATTENDENCE MAIN GUEST -->
+      <div class="form-group">
+        <label class="form-label">¿Asistís? <span class="required">*</span></label>
+        <div class="rsvp-radio-group">
+          <label class="rsvp-radio-label">
+            <input type="radio" name="asistencia" value="asiste" required onchange="handleAttendanceChange(this)"/>
+            <div class="rsvp-radio-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+              Sí, voy
+            </div>
+          </label>
+          <label class="rsvp-radio-label">
+            <input type="radio" name="asistencia" value="no_asiste" onchange="handleAttendanceChange(this)"/>
+            <div class="rsvp-radio-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              No voy
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- DIETARY RESTRICTIONS (main guest) -->
+      <div class="form-group" id="dietary-group" style="display:none;">
+        <label class="form-label">¿Alguna restricción alimentaria?</label>
+        <input type="text" class="form-input" id="dietary-input" placeholder="Ej: vegetariana, celiaco, alergia a mariscos…" />
+        <small style="color:rgba(255,255,255,0.3); font-size:11px; margin-top:4px;">Dejá en blanco si no tenés ninguna.</small>
+      </div>
+
+      <!-- COMPANION CHECKBOX -->
+      <div id="companion-check-group" style="display:none;">
+        <label class="companion-check-label" id="companion-check-label">
+          <input type="checkbox" id="companion-checkbox" onchange="toggleCompanionFields(this.checked)" />
+          <span class="companion-check-box">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </span>
+          <span class="companion-check-text" id="companion-check-text">Asisto con acompañante</span>
+        </label>
+      </div>
+
+      <!-- COMPANION DETAIL FIELDS -->
+      <div class="companion-detail-block" id="companion-detail-block">
+        <p class="companion-detail-title" id="companion-detail-title">Datos del acompañante</p>
+        <div class="companion-name-row" id="companion-name-row">
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-input" id="comp-nombre" placeholder="Nombre" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Apellido</label>
+            <input type="text" class="form-input" id="comp-apellido" placeholder="Apellido" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">¿Alguna restricción alimentaria?</label>
+          <input type="text" class="form-input" id="companion-dietary" placeholder="Ej: celiaca, alergia a nueces…" />
+          <small style="color:rgba(255,255,255,0.3); font-size:11px; margin-top:4px;">Dejá en blanco si no tiene ninguna.</small>
+        </div>
+      </div>
+
+      <!-- SUBMIT -->
+      <button type="submit" class="btn btn-primary" id="submit-btn" style="display:none; margin-top:8px; align-self:flex-start;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        Confirmar asistencia
+      </button>
+
+    </form>
+
+    <!-- SUCCESS STATE -->
+    <div class="rsvp-success" id="rsvp-success">
+      <div class="success-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </div>
+      <p class="success-title" id="success-title">¡Gracias!</p>
+      <p class="success-body" id="success-body">Tu confirmación fue registrada. ¡Los esperamos el 23 de enero!</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     FOOTER
+══════════════════════════════════════ -->
+<footer>
+  <p class="footer-names">Guada & Marco</p>
+  <p class="footer-date">23 · Enero · 2027 — Espacio Azalia</p>
+</footer>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/* ——— SUPABASE CLIENT ——— */
+const SUPABASE_URL = 'https://idqoqmmgiwnevkhjqomn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_1i92fSKjNO8AMVvnStjDwQ_hUW8Qehs';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ——— STATE ——— */
+let currentGuest = null;
+let companionGuest = null;
+
+/* ——— INIT ——— */
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 1400);
+
+  initScrollReveal();
+  initCountdown();
+  loadGuestFromURL();
+  listenCompanionDietary();
+});
+
+/* ——— URL PARAM → GUEST (real Supabase) ——— */
+async function loadGuestFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const guestId = params.get('id');
+  if (!guestId) return;
+
+  const { data, error } = await db
+    .from('invitados')
+    .select('*, acompanante:acompanante_id(id, nombre, apellido, asistencia_status)')
+    .eq('id', guestId)
+    .single();
+
+  if (error || !data) {
+    showToast('Link de invitación no encontrado. Contactate con los novios.');
+    return;
+  }
+
+  currentGuest = data;
+  const banner = document.getElementById('guest-banner');
+  banner.style.display = 'flex';
+  document.getElementById('guest-banner-text').textContent =
+    `Hola, ${data.nombre} ${data.apellido} 👋`;
+
+  if (data.asistencia_status !== 'pendiente') {
+    showAlreadyAnswered();
+    return;
+  }
+
+  if (data.acompanante) {
+    companionGuest = data.acompanante;
+  }
+}
+
+function showAlreadyAnswered() {
+  document.getElementById('rsvp-form').style.display = 'none';
+  const success = document.getElementById('rsvp-success');
+  success.classList.add('visible');
+  document.getElementById('success-title').textContent = 'Ya confirmaste 🎉';
+  document.getElementById('success-body').textContent =
+    `Recibimos tu respuesta. Si necesitás hacer algún cambio, escribile a los novios directamente.`;
+}
+
+/* ——— ATTENDANCE CHANGE ——— */
+function handleAttendanceChange(radio) {
+  const attending = radio.value === 'asiste';
+
+  document.getElementById('dietary-group').style.display        = attending ? 'flex' : 'none';
+  document.getElementById('companion-check-group').style.display = attending ? 'block' : 'none';
+  document.getElementById('submit-btn').style.display           = 'flex';
+
+  if (!attending) {
+    // Reset companion when switching to "No voy"
+    document.getElementById('companion-checkbox').checked = false;
+    document.getElementById('companion-detail-block').classList.remove('visible');
+  } else if (companionGuest) {
+    // Known companion: pre-label the checkbox and pre-fill name fields (readonly)
+    document.getElementById('companion-check-text').textContent =
+      `Asisto con ${companionGuest.nombre} ${companionGuest.apellido}`;
+    document.getElementById('companion-name-row').style.display = 'none';
+  } else {
+    document.getElementById('companion-check-text').textContent = 'Asisto con acompañante';
+    document.getElementById('companion-name-row').style.display = 'grid';
+  }
+
+  setTimeout(() => {
+    document.getElementById('submit-btn').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 300);
+}
+
+/* ——— TOGGLE COMPANION DETAIL FIELDS ——— */
+function toggleCompanionFields(checked) {
+  const block = document.getElementById('companion-detail-block');
+  if (checked) {
+    block.classList.add('visible');
+    if (companionGuest) {
+      document.getElementById('companion-detail-title').textContent =
+        `${companionGuest.nombre} ${companionGuest.apellido}`;
+    } else {
+      document.getElementById('companion-detail-title').textContent = 'Datos del acompañante';
+    }
+  } else {
+    block.classList.remove('visible');
+  }
+}
+
+/* ——— COMPANION DIETARY VISIBILITY ——— */
+function listenCompanionDietary() {
+  // No longer needed with checkbox approach — kept empty for compatibility
+}
+
+/* ——— SUBMIT RSVP (real Supabase) ——— */
+async function submitRSVP(e) {
+  e.preventDefault();
+
+  const btn = document.getElementById('submit-btn');
+  const attending = document.querySelector('input[name="asistencia"]:checked')?.value;
+  if (!attending) return;
+
+  btn.textContent = 'Guardando…';
+  btn.disabled = true;
+
+  // Actualizar invitado principal
+  const companionChecked = document.getElementById('companion-checkbox')?.checked;
+  const acompSinId = (!companionGuest && companionChecked)
+    ? `${document.getElementById('comp-nombre')?.value || ''} ${document.getElementById('comp-apellido')?.value || ''}`.trim()
+    : null;
+
+  const updatePayload = {
+    asistencia_status:         attending,
+    indicaciones_alimentarias: document.getElementById('dietary-input')?.value || null,
+    mensaje:                   null,
+    acompanante_sin_id:        acompSinId,
+    rsvp_at:                   new Date().toISOString(),
+  };
+
+  const { error } = await db
+    .from('invitados')
+    .update(updatePayload)
+    .eq('id', currentGuest.id);
+
+  if (error) {
+    showToast('❌ Error al guardar. Intentá de nuevo.');
+    btn.textContent = 'Confirmar asistencia';
+    btn.disabled = false;
+    return;
+  }
+
+  // Actualizar acompañante conocido (si aplica y el checkbox fue tildado)
+  if (companionGuest && companionChecked) {
+    await db
+      .from('invitados')
+      .update({
+        asistencia_status:         'asiste',
+        indicaciones_alimentarias: document.getElementById('companion-dietary')?.value || null,
+        rsvp_at:                   new Date().toISOString(),
+      })
+      .eq('id', companionGuest.id);
+  } else if (companionGuest && !companionChecked && attending === 'asiste') {
+    // Companion won't attend
+    await db
+      .from('invitados')
+      .update({ asistencia_status: 'no_asiste', rsvp_at: new Date().toISOString() })
+      .eq('id', companionGuest.id);
+  }
+
+  // Mostrar pantalla de éxito
+  document.getElementById('rsvp-form').style.display = 'none';
+  document.getElementById('guest-banner').style.display = 'none';
+  const success = document.getElementById('rsvp-success');
+  success.classList.add('visible');
+
+  if (attending === 'asiste') {
+    document.getElementById('success-title').textContent = '¡Nos vemos el 23! 🥂';
+    document.getElementById('success-body').textContent =
+      `¡Qué alegría tenerte con nosotros! Ya tenemos tu confirmación. Te esperamos el 23 de enero en Espacio Azalia.`;
+  } else {
+    document.getElementById('success-title').textContent = 'Gracias por avisarnos';
+    document.getElementById('success-body').textContent =
+      `Lamentamos que no puedas acompañarnos, pero lo entendemos. ¡Te mandamos un abrazo grande!`;
+  }
+}
+
+/* ——— ADD TO CALENDAR ——— */
+function addToCalendar() {
+  const title  = encodeURIComponent('Casamiento de Guada & Marco 💍');
+  const details = encodeURIComponent('¡Estamos de fiesta! Casamiento de Guada y Marco en Espacio Azalia.');
+  const location = encodeURIComponent('Espacio Azalia');
+  const start  = '20270123T190000';
+  const end    = '20270124T020000';
+  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}&dates=${start}/${end}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+  showToast('📅 Abriendo Google Calendar…');
+}
+
+/* ——— COUNTDOWN ——— */
+function initCountdown() {
+  const target = new Date('2027-01-23T21:00:00-03:00').getTime();
+
+  function update() {
+    const now  = Date.now();
+    const diff = Math.max(0, target - now);
+
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    document.getElementById('cd-days').textContent  = String(d);
+    document.getElementById('cd-hours').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-mins').textContent  = String(m).padStart(2,'0');
+    document.getElementById('cd-secs').textContent  = String(s).padStart(2,'0');
+  }
+
+  update();
+  setInterval(update, 1000);
+}
+
+/* ——— SCROLL REVEAL ——— */
+function initScrollReveal() {
+  const els = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  els.forEach(el => observer.observe(el));
+}
+
+/* ——— TOAST ——— */
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+</script>
+
+</body>
+</html>
