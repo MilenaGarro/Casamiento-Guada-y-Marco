@@ -1181,7 +1181,7 @@ async function submitRSVP(e) {
     return;
   }
 
-  // Actualizar acompañante conocido (si aplica y el checkbox fue tildado)
+  // Acompañante conocido (ya existe en la DB)
   if (companionGuest && companionChecked) {
     await db
       .from('invitados')
@@ -1192,11 +1192,38 @@ async function submitRSVP(e) {
       })
       .eq('id', companionGuest.id);
   } else if (companionGuest && !companionChecked && attending === 'asiste') {
-    // Companion won't attend
     await db
       .from('invitados')
       .update({ asistencia_status: 'no_asiste', rsvp_at: new Date().toISOString() })
       .eq('id', companionGuest.id);
+  }
+
+  // Acompañante desconocido (no existe en la DB) → crear nuevo invitado y vincular
+  if (!companionGuest && companionChecked && attending === 'asiste') {
+    const compNombre   = document.getElementById('comp-nombre')?.value?.trim();
+    const compApellido = document.getElementById('comp-apellido')?.value?.trim();
+    if (compNombre) {
+      const { data: newComp } = await db
+        .from('invitados')
+        .insert({
+          nombre:                    compNombre,
+          apellido:                  compApellido || '',
+          asistencia_status:         'asiste',
+          indicaciones_alimentarias: document.getElementById('companion-dietary')?.value || null,
+          acompanante_id:            currentGuest.id,
+          rsvp_at:                   new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      // Vincular al invitado principal con el nuevo acompañante
+      if (newComp?.id) {
+        await db
+          .from('invitados')
+          .update({ acompanante_id: newComp.id, acompanante_sin_id: null })
+          .eq('id', currentGuest.id);
+      }
+    }
   }
 
   // Mostrar pantalla de éxito
