@@ -1165,7 +1165,6 @@ async function submitRSVP(e) {
     asistencia_status:         attending,
     indicaciones_alimentarias: document.getElementById('dietary-input')?.value || null,
     mensaje:                   null,
-    acompanante_sin_id:        acompSinId,
     rsvp_at:                   new Date().toISOString(),
   };
 
@@ -1220,7 +1219,6 @@ async function submitRSVP(e) {
       if (newComp?.id) {
         await db
           .from('invitados')
-          .update({ acompanante_id: newComp.id, acompanante_sin_id: null })
           .eq('id', currentGuest.id);
       }
     }
