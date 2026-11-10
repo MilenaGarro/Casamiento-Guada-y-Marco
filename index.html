@@ -1264,6 +1264,35 @@ function buildCalendarURL() {
         .eq('id', companionGuest.id);
     }
 
+    // Acompañante NUEVO (no estaba en la DB) → INSERT solo con nombre, sin acompanante_id propio
+    if (!companionGuest && companionChecked && attending === 'asiste') {
+      const compNombre   = document.getElementById('comp-nombre')?.value?.trim();
+      const compApellido = document.getElementById('comp-apellido')?.value?.trim() || '';
+      const compDietary  = document.getElementById('companion-dietary')?.value || null;
+      if (compNombre) {
+        const { data: newComp } = await db
+          .from('invitados')
+          .insert({
+            nombre:                    compNombre,
+            apellido:                  compApellido,
+            asistencia_status:         'asiste',
+            indicaciones_alimentarias: compDietary,
+            rsvp_at:                   new Date().toISOString(),
+            // acompanante_id: null — el acompañante no referencia a nadie
+          })
+          .select('id')
+          .single();
+
+        // El invitado ORIGINAL es quien guarda la referencia al acompañante
+        if (newComp?.id) {
+          await db
+            .from('invitados')
+            .update({ acompanante_id: newComp.id })
+            .eq('id', currentGuest.id);
+        }
+      }
+    }
+
     // Mostrar pantalla de éxito
     showSuccess(attending);
 
