@@ -157,24 +157,47 @@
     .kpi-cta{font-size:10px;color:var(--burgundy-xlt);margin-top:4px;letter-spacing:.03em}
 
     /* ══════════════
-       TOOLBAR
+       SECTION HEADER — separador entre stats y lista
     ══════════════ */
-    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px 12px;flex-wrap:wrap;flex-shrink:0}
-    .toolbar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .search-wrap{position:relative}
+    .sec-hdr{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 24px 0;flex-shrink:0;
+    }
+    .sec-hdr-left{display:flex;align-items:center;gap:10px}
+    .sec-hdr-title{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gray);font-weight:500}
+    .sec-hdr-count{font-size:11px;color:var(--gray-lt)}
+    .sec-hdr-line{flex:1;height:1px;background:var(--cream-border);margin:0 12px}
+    .sec-hdr-actions{display:flex;gap:6px;align-items:center}
+
+    /* ══════════════
+       FILTER ROW
+    ══════════════ */
+    .filter-row{display:flex;align-items:center;gap:8px;padding:10px 24px 12px;flex-shrink:0}
+    .search-wrap{position:relative;flex:1;min-width:0}
     .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-lt);pointer-events:none}
-    .search{background:#fff;border:1px solid var(--cream-border);border-radius:6px;padding:9px 14px 9px 34px;color:var(--black);font-family:var(--ff-sans);font-size:13px;outline:none;width:230px;transition:border-color .2s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+    .search{width:100%;background:#fff;border:1px solid var(--cream-border);border-radius:6px;padding:9px 14px 9px 34px;color:var(--black);font-family:var(--ff-sans);font-size:13px;outline:none;transition:border-color .2s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
     .search:focus{border-color:var(--burgundy-xlt);box-shadow:0 0 0 3px rgba(107,26,42,.07)}
     .search::placeholder{color:var(--gray-lt)}
-    .filters{display:flex;gap:4px}
-    .ftab{background:#fff;border:1px solid var(--cream-border);border-radius:20px;color:var(--gray);font-family:var(--ff-sans);font-size:11px;letter-spacing:.04em;padding:7px 14px;cursor:pointer;transition:all .15s}
-    .ftab:hover{border-color:var(--burgundy-xlt);color:var(--burgundy)}
-    .ftab.on{background:var(--burgundy);border-color:var(--burgundy);color:#fff}
-    .toolbar-right{display:flex;gap:8px}
-    .btn-add{display:inline-flex;align-items:center;gap:6px;background:var(--burgundy);border:1px solid var(--burgundy);border-radius:6px;color:#fff;font-family:var(--ff-sans);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:9px 16px;cursor:pointer;transition:all .2s}
+
+    /* Dropdown filtro */
+    .filter-dd-wrap{position:relative;flex-shrink:0}
+    .filter-dd-btn{display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--cream-border);border-radius:6px;color:var(--charcoal);font-family:var(--ff-sans);font-size:12px;padding:9px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .filter-dd-btn.active{border-color:var(--burgundy);color:var(--burgundy);background:rgba(107,26,42,.04)}
+    .filter-dd-btn svg{flex-shrink:0;transition:transform .2s}
+    .filter-dd-btn.open svg{transform:rotate(180deg)}
+    .filter-dd{position:absolute;top:calc(100% + 5px);right:0;background:#fff;border:1px solid var(--cream-border);border-radius:8px;min-width:150px;z-index:50;box-shadow:0 8px 24px rgba(26,26,26,.1);overflow:hidden;display:none}
+    .filter-dd.open{display:block}
+    .ftab{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;font-family:var(--ff-sans);font-size:12px;color:var(--charcoal);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .12s;gap:10px}
+    .ftab:hover{background:rgba(107,26,42,.04)}
+    .ftab.on{color:var(--burgundy);font-weight:500}
+    .ftab-dot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--cream-border);flex-shrink:0}
+    .ftab.on .ftab-dot{background:var(--burgundy);border-color:var(--burgundy)}
+
+    /* Buttons */
+    .btn-add{display:inline-flex;align-items:center;gap:6px;background:var(--burgundy);border:1px solid var(--burgundy);border-radius:6px;color:#fff;font-family:var(--ff-sans);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:9px 14px;cursor:pointer;transition:all .2s}
     .btn-add:hover{background:var(--burgundy-lt)}
-    .btn-csv{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--cream-border);border-radius:6px;color:var(--charcoal);font-family:var(--ff-sans);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:9px 16px;cursor:pointer;transition:all .2s}
-    .btn-csv:hover{border-color:var(--verde);color:var(--verde)}
+    .btn-icon{display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--cream-border);border-radius:6px;color:var(--charcoal);padding:9px 10px;cursor:pointer;transition:all .2s;gap:5px;font-family:var(--ff-sans);font-size:11px}
+    .btn-icon:hover{border-color:var(--charcoal);color:var(--black)}
 
     /* ══════════════
        TABLE
@@ -211,12 +234,10 @@
     /* ══════════════
        MESAS
     ══════════════ */
-    .mesas-topbar{background:#fff;border-bottom:1px solid var(--cream-border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-    .mesas-stats{display:flex;gap:24px}
+    .mesas-stats-bar{display:flex;gap:20px;align-items:center;padding:10px 24px;background:#fff;border-bottom:1px solid var(--cream-border);flex-shrink:0}
     .mesas-stat{font-size:12px;color:var(--gray)}
     .mesas-stat strong{color:var(--black);font-weight:500}
-    .btn-gold{display:flex;align-items:center;gap:6px;background:var(--gold);border:1px solid var(--gold);border-radius:6px;color:#fff;padding:8px 16px;font-family:var(--ff-sans);font-size:11px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .17s}
-    .btn-gold:hover{background:var(--gold-lt)}
+    .mesas-stat+.mesas-stat{padding-left:20px;border-left:1px solid var(--cream-border)}
 
     .mesas-loading{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--gray);font-size:13px}
 
@@ -422,17 +443,12 @@
       .kpi-num{font-size:36px}
       .kpi-cta{display:none}
 
-      /* Toolbar */
-      .toolbar{flex-direction:column;gap:10px;padding:12px 12px 8px}
-      .toolbar-left{flex-direction:column;gap:8px}
-      .search-wrap{width:100%}
-      .search{width:100%}
-      .filters{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px;gap:4px}
-      .filters::-webkit-scrollbar{display:none}
-      .ftab{flex-shrink:0;font-size:10px;padding:6px 11px}
-      .toolbar-right{justify-content:flex-end}
+      /* Section header & filter row mobile */
+      .sec-hdr{padding:12px 12px 0}
+      .filter-row{padding:8px 12px 10px}
       .btn-add span{display:none}
-      .btn-csv span{display:none}
+      .mesas-stats-bar{padding:8px 14px;gap:12px;flex-wrap:wrap}
+      .mesas-stat+.mesas-stat{padding-left:12px}
 
       /* Tabla: scroll horizontal, ocultar columnas secundarias */
       .table-wrap{padding:0 12px 0;overflow-x:auto}
@@ -447,8 +463,6 @@
       #mesa-modal{align-items:flex-end;padding:0}
 
       /* Mesas: layout apilado con tabs */
-      .mesas-topbar{padding:0 14px;flex-wrap:wrap;gap:8px;height:auto;min-height:52px}
-      .mesas-stats{flex-wrap:wrap;gap:10px 16px;padding:10px 0}
       .mesa-tabs{display:flex}
       .mesas-layout{
         grid-template-columns:1fr !important;
@@ -695,28 +709,42 @@
         </div>
       </div>
 
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <div class="search-wrap">
-            <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input class="search" type="text" id="search" placeholder="Buscar invitado…" oninput="applyFilters()"/>
-          </div>
-          <div class="filters">
-            <button class="ftab on" data-f="todos" onclick="setF('todos',this)">Todos</button>
-            <button class="ftab" data-f="asiste" onclick="setF('asiste',this)">Asisten</button>
-            <button class="ftab" data-f="no_asiste" onclick="setF('no_asiste',this)">No asisten</button>
-            <button class="ftab" data-f="pendiente" onclick="setF('pendiente',this)">Pendientes</button>
-          </div>
+      <!-- Lista de invitados: separador + acciones -->
+      <div class="sec-hdr">
+        <div class="sec-hdr-left">
+          <span class="sec-hdr-title">Lista de invitados</span>
+          <span class="sec-hdr-count" id="guest-count"></span>
         </div>
-        <div class="toolbar-right">
+        <div class="sec-hdr-line"></div>
+        <div class="sec-hdr-actions">
+          <button class="btn-icon" onclick="exportCSV()" title="Exportar Excel">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
           <button class="btn-add" onclick="openAddModal()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Agregar
+            <span>Agregar</span>
           </button>
-          <button class="btn-csv" onclick="exportCSV()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Excel
+        </div>
+      </div>
+
+      <!-- Fila: búsqueda + filtro dropdown -->
+      <div class="filter-row">
+        <div class="search-wrap">
+          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search" type="text" id="search" placeholder="Buscar invitado…" oninput="applyFilters()"/>
+        </div>
+        <div class="filter-dd-wrap">
+          <button class="filter-dd-btn" id="filter-dd-btn" onclick="toggleFilterDD(event)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            <span id="filter-label">Todos</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
+          <div class="filter-dd" id="filter-dd">
+            <button class="ftab on" data-f="todos" onclick="setF('todos',this)"><span>Todos</span><span class="ftab-dot"></span></button>
+            <button class="ftab" data-f="asiste" onclick="setF('asiste',this)"><span>Asisten</span><span class="ftab-dot"></span></button>
+            <button class="ftab" data-f="no_asiste" onclick="setF('no_asiste',this)"><span>No asisten</span><span class="ftab-dot"></span></button>
+            <button class="ftab" data-f="pendiente" onclick="setF('pendiente',this)"><span>Pendientes</span><span class="ftab-dot"></span></button>
+          </div>
         </div>
       </div>
 
@@ -741,22 +769,25 @@
 
     <!-- ── MESAS ── -->
     <div class="section" id="sec-mesas">
-      <div class="mesas-topbar">
-        <div style="display:flex;align-items:center;gap:10px">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:8px">
           <button class="topbar-ham" onclick="toggleSidebar()">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <div class="mesas-stats">
-            <span class="mesas-stat"><strong id="stat-mesas">0</strong> mesas</span>
-            <span class="mesas-stat"><strong id="stat-asig">0</strong> asignados</span>
-            <span class="mesas-stat"><strong id="stat-libre">0</strong> por ubicar</span>
-            <span class="mesas-stat"><strong id="stat-total">0</strong> invitados</span>
-          </div>
+          <span class="topbar-title">Gestión de Mesas</span>
         </div>
-        <button class="btn-gold" onclick="openMesaModal()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>Nueva Mesa</span>
-        </button>
+        <div class="topbar-right">
+          <button class="btn-add" onclick="openMesaModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Nueva Mesa</span>
+          </button>
+        </div>
+      </div>
+      <div class="mesas-stats-bar">
+        <span class="mesas-stat"><strong id="stat-mesas">0</strong> mesas</span>
+        <span class="mesas-stat"><strong id="stat-asig">0</strong> asignados</span>
+        <span class="mesas-stat"><strong id="stat-libre">0</strong> por ubicar</span>
+        <span class="mesas-stat"><strong id="stat-total">0</strong> invitados</span>
       </div>
       <!-- TABS mobile -->
       <div class="mesa-tabs" id="mesa-tabs">
@@ -862,10 +893,33 @@ function updateKPIs(){
 }
 function sv(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 
+/* ══ FILTER DROPDOWN ══ */
+function toggleFilterDD(e){
+  e.stopPropagation();
+  const btn=document.getElementById('filter-dd-btn');
+  const dd=document.getElementById('filter-dd');
+  btn.classList.toggle('open');
+  dd.classList.toggle('open');
+}
+function closeFilterDD(){
+  document.getElementById('filter-dd-btn')?.classList.remove('open');
+  document.getElementById('filter-dd')?.classList.remove('open');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.filter-dd-wrap'))closeFilterDD();
+});
+
+const F_LABELS={todos:'Todos',asiste:'Asisten',no_asiste:'No asisten',pendiente:'Pendientes'};
 function setF(f,btn){
   activeF=f;page=1;
   document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
   if(btn)btn.classList.add('on');
+  // Update dropdown button label + active state
+  const lbl=document.getElementById('filter-label');
+  if(lbl)lbl.textContent=F_LABELS[f]||'Filtrar';
+  const ddbtn=document.getElementById('filter-dd-btn');
+  if(ddbtn)ddbtn.classList.toggle('active',f!=='todos');
+  closeFilterDD();
   applyFilters();
 }
 
@@ -930,6 +984,7 @@ function render(){
       </tr>`;
     }).join('');
   }
+  sv('guest-count',total?`${total} invitado${total!==1?'s':''}`:'');
   sv('pager-info',total?`${start+1}–${Math.min(start+PAGE,total)} de ${total} invitados`:'');
   const pb=document.getElementById('pager-btns');
   if(pages<=1){pb.innerHTML='';return;}
