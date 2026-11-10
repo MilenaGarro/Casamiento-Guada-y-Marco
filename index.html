@@ -822,6 +822,140 @@
       .info-cards { padding: 48px 20px; }
       .section { padding: 60px 20px; }
     }
+
+    /* ===== MENORES A CARGO ===== */
+    .menores-block {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .menores-search-wrap {
+      position: relative;
+    }
+    .menores-search-wrap input {
+      width: 100%;
+      padding-right: 36px;
+    }
+    .menores-search-wrap .search-spinner {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-top-color: var(--gold-lt);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .menores-search-wrap.loading .search-spinner { display: block; }
+    @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+    .menor-chip-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .menor-chip-row:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .menor-chip-dietary {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .menores-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: none;
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 7px 14px;
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      width: fit-content;
+    }
+    .menores-add-btn:hover {
+      border-color: var(--gold-lt);
+      color: var(--gold-lt);
+    }
+    .menor-chip-dietary label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .menor-chip-dietary input {
+      width: 100%;
+      font-size: 13px;
+      padding: 7px 12px;
+      box-sizing: border-box;
+    }
+
+    .menores-results {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    .menores-results.visible { display: block; }
+    .menor-result-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.15s;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+    }
+    .menor-result-item:last-child { border-bottom: none; }
+    .menor-result-item:hover { background: rgba(255,255,255,0.08); }
+    .menor-result-item svg { flex-shrink: 0; color: var(--gold-lt); }
+    .menor-result-empty {
+      padding: 12px 16px;
+      color: rgba(255,255,255,0.35);
+      font-size: 13px;
+      text-align: center;
+    }
+    .menores-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .menor-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(var(--burgundy-rgb, 110,28,41), 0.35);
+      border: 1px solid var(--burgundy-xlt);
+      border-radius: 20px;
+      padding: 5px 12px 5px 10px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+    }
+    .menor-chip button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(255,255,255,0.4);
+      padding: 0;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    .menor-chip button:hover { color: rgba(255,255,255,0.9); }
+
   </style>
 </head>
 <body>
@@ -1008,6 +1142,48 @@
         </div>
       </div>
 
+
+      <!-- MENORES A CARGO -->
+      <div id="menores-check-group" style="display:none;">
+        <label class="companion-check-label" id="menores-check-label">
+          <input type="checkbox" id="menores-checkbox" onchange="toggleMenoresFields(this.checked)" />
+          <span class="companion-check-box">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </span>
+          <span class="companion-check-text">Asisto con menor/es a cargo</span>
+        </label>
+      </div>
+
+      <!-- MENORES DETAIL BLOCK -->
+      <div class="companion-detail-block" id="menores-detail-block">
+        <p class="companion-detail-title">Menores a cargo</p>
+        <div class="menores-block">
+          <!-- chips de menores seleccionados -->
+          <div class="menores-chips" id="menores-chips" style="display:none;"></div>
+          <!-- separador (visible solo cuando hay chips) -->
+          <hr id="menores-sep" style="display:none; border:none; border-top:1px solid rgba(255,255,255,0.1); margin:0;" />
+          <!-- botón agregar otro (visible cuando hay al menos 1 chip) -->
+          <button type="button" class="menores-add-btn" id="menores-add-btn"
+            style="display:none;" onclick="showMenoresSearch()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar otro menor
+          </button>
+          <!-- buscador -->
+          <div class="menores-search-wrap" id="menores-search-wrap">
+            <input type="text" class="form-input" id="menores-search-input"
+              placeholder="Escribí el nombre del menor…"
+              autocomplete="off"
+              oninput="onMenoresSearch(this.value)" />
+            <div class="search-spinner"></div>
+          </div>
+          <!-- resultados -->
+          <div class="menores-results" id="menores-results"></div>
+          <small id="menores-hint" style="color:rgba(255,255,255,0.3); font-size:11px; margin-top:-6px;">
+            Buscá por nombre o apellido. Solo aparecen los menores ya registrados en la lista de invitados.
+          </small>
+        </div>
+      </div>
+
       <!-- SUBMIT -->
       <button type="submit" class="btn btn-primary" id="submit-btn" style="display:none; margin-top:8px; align-self:flex-start;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
@@ -1124,6 +1300,11 @@ function handleAttendanceChange(radio) {
 
   document.getElementById('dietary-group').style.display        = attending ? 'flex' : 'none';
   document.getElementById('companion-check-group').style.display = attending ? 'block' : 'none';
+    document.getElementById('menores-check-group').style.display = attending ? 'block' : 'none';
+    if (!attending) {
+      document.getElementById('menores-checkbox').checked = false;
+      toggleMenoresFields(false);
+    }
   document.getElementById('submit-btn').style.display           = 'flex';
 
   if (!attending) {
@@ -1291,6 +1472,270 @@ function buildCalendarURL() {
             .eq('id', currentGuest.id);
         }
       }
+    }
+
+    // Mostrar pantalla de éxito
+    showSuccess(attending);
+
+  } catch (err) {
+    console.error('RSVP error:', err);
+    showToast('❌ Ocurrió un error inesperado. Intentá de nuevo.');
+    resetBtn();
+  }
+}
+
+/* ——— RESET SUBMIT BUTTON ——— */
+function resetBtn() {
+  const btn = document.getElementById('submit-btn');
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg> Confirmar asistencia`;
+  btn.disabled = false;
+}
+
+
+/* ——— MENORES A CARGO ——— */
+let selectedMenores = [];   // array de { id, nombre, apellido }
+let menoresSearchTimer = null;
+
+function toggleMenoresFields(checked) {
+  const block = document.getElementById('menores-detail-block');
+  if (checked) {
+    block.classList.add('visible');
+    document.getElementById('menores-search-input').focus();
+  } else {
+    block.classList.remove('visible');
+    clearMenoresSearch();
+    selectedMenores = [];
+    renderMenoresChips();
+    // Resetear visibilidad del buscador para próxima apertura
+    document.getElementById('menores-search-wrap').style.display = 'block';
+    document.getElementById('menores-add-btn').style.display = 'none';
+    const hint = document.getElementById('menores-hint');
+    if (hint) hint.style.display = 'block';
+    const sep = document.getElementById('menores-sep');
+    if (sep) sep.style.display = 'none';
+  }
+}
+
+function clearMenoresSearch() {
+  document.getElementById('menores-search-input').value = '';
+  const results = document.getElementById('menores-results');
+  results.innerHTML = '';
+  results.classList.remove('visible');
+  document.getElementById('menores-search-wrap').classList.remove('loading');
+}
+
+function onMenoresSearch(val) {
+  clearTimeout(menoresSearchTimer);
+  const results = document.getElementById('menores-results');
+  if (val.trim().length < 2) {
+    results.innerHTML = '';
+    results.classList.remove('visible');
+    return;
+  }
+  menoresSearchTimer = setTimeout(() => searchMenores(val.trim()), 300);
+}
+
+async function searchMenores(q) {
+  const wrap = document.getElementById('menores-search-wrap');
+  const results = document.getElementById('menores-results');
+  wrap.classList.add('loading');
+
+  const { data, error } = await db
+    .from('invitados')
+    .select('id, nombre, apellido')
+    .eq('es_menor', true)
+    .or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%`)
+    .limit(3);
+
+  wrap.classList.remove('loading');
+
+  if (error || !data) {
+    results.innerHTML = '<div class="menor-result-empty">Error al buscar. Intentá de nuevo.</div>';
+    results.classList.add('visible');
+    return;
+  }
+
+  // Filtrar los ya seleccionados
+  const available = data.filter(m => !selectedMenores.some(s => s.id === m.id));
+
+  if (available.length === 0) {
+    results.innerHTML = '<div class="menor-result-empty">Sin resultados. Verificá el nombre.</div>';
+    results.classList.add('visible');
+    return;
+  }
+
+  results.innerHTML = available.map(m => `
+    <div class="menor-result-item" onclick="addMenor(${JSON.stringify(m).replace(/"/g, '&quot;')})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+      ${m.nombre} ${m.apellido}
+    </div>`).join('');
+  results.classList.add('visible');
+}
+
+function addMenor(menor) {
+  if (selectedMenores.some(m => m.id === menor.id)) return;
+  selectedMenores.push({ ...menor, dietary: '' });
+  renderMenoresChips();
+  clearMenoresSearch();
+}
+
+function removeMenor(id) {
+  selectedMenores = selectedMenores.filter(m => m.id !== id);
+  renderMenoresChips();
+}
+
+function updateMenorDietary(id, val) {
+  const m = selectedMenores.find(m => m.id === id);
+  if (m) m.dietary = val;
+}
+
+function renderMenoresChips() {
+  const container = document.getElementById('menores-chips');
+  const addBtn    = document.getElementById('menores-add-btn');
+  const searchWrap = document.getElementById('menores-search-wrap');
+  const hint      = document.getElementById('menores-hint');
+
+  if (selectedMenores.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    addBtn.style.display = 'none';
+    searchWrap.style.display = 'block';
+    if (hint) hint.style.display = 'block';
+    const sep = document.getElementById('menores-sep');
+    if (sep) sep.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'flex';
+  container.innerHTML = selectedMenores.map(m => `
+    <div class="menor-chip-row" style="width:100%;">
+      <div class="menor-chip" style="width:fit-content;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+        ${m.nombre} ${m.apellido}
+        <button type="button" onclick="removeMenor('${m.id}')" title="Quitar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="menor-chip-dietary">
+        <label>Restricción alimentaria (opcional)</label>
+        <input type="text" class="form-input"
+          placeholder="Ej: celiaco, alergia a nueces…"
+          value="${m.dietary || ''}"
+          oninput="updateMenorDietary('${m.id}', this.value)" />
+      </div>
+    </div>`).join('');
+
+  // Separador: visible cuando hay chips
+  const sep = document.getElementById('menores-sep');
+  if (sep) sep.style.display = 'block';
+
+  // Ocultar buscador y hint; mostrar botón "agregar otro"
+  addBtn.style.display = 'inline-flex';
+  searchWrap.style.display = 'none';
+  if (hint) hint.style.display = 'none';
+  document.getElementById('menores-results').classList.remove('visible');
+}
+
+function showMenoresSearch() {
+  document.getElementById('menores-add-btn').style.display = 'none';
+  const wrap = document.getElementById('menores-search-wrap');
+  wrap.style.display = 'block';
+  const hint = document.getElementById('menores-hint');
+  if (hint) hint.style.display = 'block';
+  // separador sigue visible entre los chips y el nuevo buscador
+  const sep = document.getElementById('menores-sep');
+  if (sep) sep.style.display = 'block';
+  document.getElementById('menores-search-input').value = '';
+  setTimeout(() => document.getElementById('menores-search-input').focus(), 50);
+}
+
+/* ——— SUBMIT RSVP (real Supabase) ——— */
+function buildCalendarURL() {
+    var title   = encodeURIComponent('Casamiento Guada & Marco 💍');
+    var start   = '20270123T210000';
+    var end     = '20270124T020000';
+    var tz      = encodeURIComponent('America/Argentina/Buenos_Aires');
+    var loc     = encodeURIComponent('Espacio Azalia, Buenos Aires');
+    var details = encodeURIComponent('¡Los esperamos para celebrar junto a Guada & Marco!');
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+      + '&text=' + title + '&dates=' + start + '/' + end
+      + '&ctz=' + tz + '&location=' + loc + '&details=' + details;
+  }
+
+  async function submitRSVP(e) {
+  e.preventDefault();
+
+  const btn = document.getElementById('submit-btn');
+  const attending = document.querySelector('input[name="asistencia"]:checked')?.value;
+  if (!attending) return;
+
+  // Guard: without a loaded guest we cannot persist anything
+  if (!currentGuest) {
+    showToast('⚠️ Usá el link personalizado de tu invitación para confirmar.');
+    return;
+  }
+
+  btn.textContent = 'Guardando…';
+  btn.disabled = true;
+
+  try {
+    const companionChecked = document.getElementById('companion-checkbox')?.checked;
+    const acompSinId = (!companionGuest && companionChecked)
+      ? `${document.getElementById('comp-nombre')?.value || ''} ${document.getElementById('comp-apellido')?.value || ''}`.trim()
+      : null;
+
+    const updatePayload = {
+      asistencia_status:         attending,
+      indicaciones_alimentarias: document.getElementById('dietary-input')?.value || null,
+      mensaje:                   null,
+      rsvp_at:                   new Date().toISOString(),
+    };
+
+    const { error } = await db
+      .from('invitados')
+      .update(updatePayload)
+      .eq('id', currentGuest.id);
+
+    if (error) {
+      showToast('❌ Error al guardar. Intentá de nuevo.');
+      resetBtn();
+      return;
+    }
+
+    // Actualizar acompañante conocido (si aplica y el checkbox fue tildado)
+    if (companionGuest && companionChecked) {
+      await db
+        .from('invitados')
+        .update({
+          asistencia_status:         'asiste',
+          indicaciones_alimentarias: document.getElementById('companion-dietary')?.value || null,
+          rsvp_at:                   new Date().toISOString(),
+        })
+        .eq('id', companionGuest.id);
+    } else if (companionGuest && !companionChecked && attending === 'asiste') {
+      // Companion won't attend
+      await db
+        .from('invitados')
+        .update({ asistencia_status: 'no_asiste', rsvp_at: new Date().toISOString() })
+        .eq('id', companionGuest.id);
+    }
+
+    // Actualizar menores a cargo (solo update, nunca insert)
+    const menoresChecked = document.getElementById('menores-checkbox')?.checked;
+    if (menoresChecked && selectedMenores.length > 0 && attending === 'asiste') {
+      await Promise.all(selectedMenores.map(m =>
+        db.from('invitados')
+          .update({
+            asistencia_status: 'asiste',
+            indicaciones_alimentarias: m.dietary || null,
+            rsvp_at: new Date().toISOString(),
+          })
+          .eq('id', m.id)
+      ));
     }
 
     // Mostrar pantalla de éxito
