@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel Novios — Guada & Marco</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --cream:#FAF7F2;--cream-dark:#F0EBE1;--cream-border:#E5DDD0;
+      --black:#1A1A1A;--charcoal:#3A3A3A;--gray:#8A8A8A;--gray-lt:#C0B8B0;
+      --burgundy:#6B1A2A;--burgundy-lt:#8B2A3E;--burgundy-xlt:#C07080;
+      --gold:#C4A044;--gold-lt:#D4B85A;--verde:#3D6355;--verde-lt:#4E7D6B;
+      --ff-serif:'Cormorant Garamond',Georgia,serif;
+      --ff-sans:'Montserrat',system-ui,sans-serif;
+      --shadow:0 2px 20px rgba(26,26,26,0.07);
+      --shadow-md:0 4px 32px rgba(107,26,42,0.1);
+    }
+    html,body{height:100%;font-family:var(--ff-sans);background:var(--cream);color:var(--black);font-size:14px;overflow:hidden}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ══ LAYOUT ══ */
+    .app{display:flex;height:100vh;overflow:hidden}
+
+    /* ══ SIDEBAR ══
+       Patrón: colapsado por defecto (52px), solo iconos.
+       Al expandir (220px) aparece el texto con fade-in.
+       El inner wrapper es siempre 220px — el sidebar lo recorta con overflow:hidden.
+    ══ */
+    .sidebar{
+      width:52px;            /* colapsado por defecto */
+      flex-shrink:0;
+      background:var(--black);
+      display:flex;flex-direction:column;
+      transition:width .25s cubic-bezier(.4,0,.2,1);
+      overflow:hidden;
+      position:relative;z-index:10;
+    }
+    .sidebar.expanded{width:220px}
+
+    /* Toggle — siempre 52px, siempre visible */
+    .sb-toggle{
+      width:52px;height:52px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;
+      color:rgba(255,255,255,.35);
+      border-bottom:1px solid rgba(255,255,255,.07);
+      transition:color .15s;
+    }
+    .sb-toggle:hover{color:var(--gold)}
+
+    /* Inner wrapper — ancho fijo 220px, recortado por el padre */
+    .sb-inner{width:220px;flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+    /* Logo — se oculta cuando colapsado */
+    .sb-logo{
+      padding:20px 18px 14px;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      opacity:0;transition:opacity .15s;
+      pointer-events:none;
+    }
+    .sidebar.expanded .sb-logo{opacity:1;pointer-events:all;transition-delay:.1s}
+    .sb-logo-name{font-family:var(--ff-serif);font-size:19px;font-style:italic;font-weight:300;color:#fff;white-space:nowrap}
+    .sb-logo-name em{color:var(--gold);font-style:normal}
+    .sb-logo-date{font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-top:4px;white-space:nowrap}
+    .sb-pill{margin-top:10px;display:inline-flex;align-items:center;gap:5px;background:rgba(72,187,120,.08);border:1px solid rgba(72,187,120,.2);border-radius:20px;padding:3px 9px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(72,187,120,.7);white-space:nowrap}
+    .sb-dot{width:5px;height:5px;border-radius:50%;background:rgba(72,187,120,.7)}
+
+    /* Nav */
+    .sb-nav{flex:1;padding:10px 6px;overflow-y:auto}
+    .sb-nav::-webkit-scrollbar{width:0}
+    .sidebar.expanded .sb-nav{padding:12px 10px}
+
+    /* Label de sección — oculto cuando colapsado */
+    .sb-label{
+      font-size:8px;letter-spacing:.34em;text-transform:uppercase;
+      color:rgba(255,255,255,.2);padding:8px 8px 5px;white-space:nowrap;
+      opacity:0;transition:opacity .15s;
+    }
+    .sidebar.expanded .sb-label{opacity:1;transition-delay:.1s}
+
+    /* Item de nav:
+       - icono siempre visible, alineado a la izquierda dentro del área de 52px
+       - padding-left fijo para que el icono quede centrado en 52px: (52-14)/2 = 19px
+    */
+    .sb-item{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 0 10px 19px;   /* icono centrado en la franja de 52px */
+      border-radius:4px;cursor:pointer;
+      color:rgba(255,255,255,.38);font-size:12px;white-space:nowrap;
+      border:1px solid transparent;transition:all .15s;user-select:none;margin-bottom:2px;
+    }
+    .sidebar.expanded .sb-item{padding:10px 10px}
+    .sb-item:hover{color:rgba(255,255,255,.75);background:rgba(255,255,255,.05)}
+    .sb-item.active{color:#fff;background:var(--burgundy)}
+    .sb-item svg{flex-shrink:0;width:14px;height:14px}
+
+    /* Texto del item — fade in al expandir */
+    .sb-item-text{opacity:0;transition:opacity .12s;pointer-events:none}
+    .sidebar.expanded .sb-item-text{opacity:1;transition-delay:.12s;pointer-events:all}
+
+    /* Footer — oculto cuando colapsado */
+    .sb-footer{
+      padding:12px 10px;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0;
+      opacity:0;transition:opacity .15s;pointer-events:none;
+    }
+    .sidebar.expanded .sb-footer{opacity:1;pointer-events:all;transition-delay:.08s}
+    .sb-link{display:block;text-align:center;color:rgba(255,255,255,.25);font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;padding:7px;border:1px solid rgba(255,255,255,.1);border-radius:3px;transition:all .17s;white-space:nowrap}
+    .sb-link:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6)}
+
+    /* ══ MAIN ══ */
+    .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--cream)}
+
+    .section{flex:1;overflow:hidden;display:none;flex-direction:column;animation:fadeIn .2s ease}
+    .section.active{display:flex}
+
+    /* ══════════════
+       TOPBAR
+    ══════════════ */
+    .topbar{
+      background:#fff;border-bottom:1px solid var(--cream-border);
+      padding:0 24px;height:54px;display:flex;align-items:center;
+      justify-content:space-between;flex-shrink:0;
+      box-shadow:0 1px 0 var(--cream-border);
+    }
+    .topbar-title{font-family:var(--ff-serif);font-size:20px;font-style:italic;font-weight:300;color:var(--black)}
+    .topbar-right{display:flex;align-items:center;gap:10px}
+    .topbar-date{font-size:11px;color:var(--gray);letter-spacing:.08em}
+    .btn-refresh{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--cream-border);border-radius:4px;color:var(--charcoal);font-family:var(--ff-sans);font-size:11px;padding:7px 13px;cursor:pointer;transition:all .2s}
+    .btn-refresh:hover{border-color:var(--burgundy);color:var(--burgundy)}
+    .btn-refresh.spinning svg{animation:spin .6s linear infinite}
+
+    /* ══════════════
+       KPI CARDS
+    ══════════════ */
+    .kpi-section{padding:20px 24px 0;flex-shrink:0}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .kpi-card{
+      background:#fff;border:1px solid var(--cream-border);border-radius:8px;
+      padding:18px 20px 16px;cursor:pointer;position:relative;overflow:hidden;
+      transition:all .2s;box-shadow:var(--shadow);
+    }
+    .kpi-card:hover{box-shadow:var(--shadow-md);border-color:transparent;transform:translateY(-1px)}
+    .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:8px 8px 0 0}
+    .kpi-card.k-asisten::before{background:#4CAF50}
+    .kpi-card.k-no::before{background:#EF5350}
+    .kpi-card.k-pend::before{background:var(--gold)}
+    .kpi-card.k-rest::before{background:var(--verde)}
+    .kpi-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray);margin-bottom:8px}
+    .kpi-num{font-family:var(--ff-serif);font-size:48px;font-style:italic;font-weight:300;color:var(--black);line-height:1}
+    .kpi-sub{font-size:11px;color:var(--gray-lt);margin-top:6px}
+    .kpi-cta{font-size:10px;color:var(--burgundy-xlt);margin-top:4px;letter-spacing:.03em}
+
+    /* Stat de menores — línea sutil debajo de KPIs */
+    .minor-stat{display:flex;align-items:center;gap:14px;padding:10px 24px 0;flex-shrink:0}
+    .minor-stat-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--gray);cursor:pointer;transition:color .15s;border:none;background:none;font-family:var(--ff-sans);padding:0}
+    .minor-stat-chip:hover{color:var(--burgundy)}
+    .minor-stat-chip strong{color:var(--black);font-weight:500}
+    .minor-stat-chip.zero{opacity:.35;cursor:default;pointer-events:none}
+
+    /* Menores a cargo — bloque en modal de adulto */
+    .menores-cargo{background:rgba(196,160,68,.06);border:1px solid rgba(196,160,68,.2);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+    .menores-cargo-title{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#8B6914;font-weight:500}
+    .menor-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--black)}
+    .menor-row-name{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;transition:color .12s}
+    .menor-row-name:hover{color:var(--burgundy)}
+
+    /* Badge menor — aparece inline en la celda nombre */
+    .badge-menor{display:inline-flex;align-items:center;gap:3px;background:rgba(196,160,68,.1);border:1px solid rgba(196,160,68,.25);border-radius:20px;padding:1px 7px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8B6914;margin-left:5px;vertical-align:middle;font-weight:500}
+
+    /* ══════════════
+       SECTION HEADER — separador entre stats y lista
+    ══════════════ */
+    .sec-hdr{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 24px 0;flex-shrink:0;
+    }
+    .sec-hdr-left{display:flex;align-items:center;gap:10px}
+    .sec-hdr-title{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gray);font-weight:500}
+    .sec-hdr-count{font-size:11px;color:var(--gray-lt)}
+    .sec-hdr-line{flex:1;height:1px;background:var(--cream-border);margin:0 12px}
+    .sec-hdr-actions{display:flex;gap:6px;align-items:center}
+
+    /* ══════════════
+       FILTER ROW
+    ══════════════ */
+    .filter-row{display:flex;align-items:center;gap:8px;padding:10px 24px 12px;flex-shrink:0}
+    .search-wrap{position:relative;flex:1;min-width:0}
+    .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-lt);pointer-events:none}
+    .search{width:100%;background:#fff;border:1px solid var(--cream-border);border-radius:6px;padding:9px 14px 9px 34px;color:var(--black);font-family:var(--ff-sans);font-size:13px;outline:none;transition:border-color .2s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+    .search:focus{border-color:var(--burgundy-xlt);box-shadow:0 0 0 3px rgba(107,26,42,.07)}
+    .search::placeholder{color:var(--gray-lt)}
+
+    /* Dropdown filtro */
+    .filter-dd-wrap{position:relative;flex-shrink:0}
+    .filter-dd-btn{display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--cream-border);border-radius:6px;color:var(--charcoal);font-family:var(--ff-sans);font-size:12px;padding:9px 13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .filter-dd-btn.active{border-color:var(--burgundy);color:var(--burgundy);background:rgba(107,26,42,.04)}
+    .filter-dd-btn svg{flex-shrink:0;transition:transform .2s}
+    .filter-dd-btn.open svg{transform:rotate(180deg)}
+    .filter-dd{position:absolute;top:calc(100% + 5px);right:0;background:#fff;border:1px solid var(--cream-border);border-radius:8px;min-width:150px;z-index:50;box-shadow:0 8px 24px rgba(26,26,26,.1);overflow:hidden;display:none}
+    .filter-dd.open{display:block}
+    .ftab{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;font-family:var(--ff-sans);font-size:12px;color:var(--charcoal);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .12s;gap:10px}
+    .ftab:hover{background:rgba(107,26,42,.04)}
+    .ftab.on{color:var(--burgundy);font-weight:500}
+    .ftab-dot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--cream-border);flex-shrink:0}
+    .ftab.on .ftab-dot{background:var(--burgundy);border-color:var(--burgundy)}
+
+    /* Buttons */
+    .btn-add{display:inline-flex;align-items:center;gap:6px;background:var(--burgundy);border:1px solid var(--burgundy);border-radius:6px;color:#fff;font-family:var(--ff-sans);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:9px 14px;cursor:pointer;transition:all .2s}
+    .btn-add:hover{background:var(--burgundy-lt)}
+    .btn-icon{display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--cream-border);border-radius:6px;color:var(--charcoal);padding:9px 10px;cursor:pointer;transition:all .2s;gap:5px;font-family:var(--ff-sans);font-size:11px}
+    .btn-icon:hover{border-color:var(--charcoal);color:var(--black)}
+
+    /* ══════════════
+       TABLE
+    ══════════════ */
+    .table-wrap{flex:1;overflow:auto;padding:0 24px 0}
+    .table-wrap::-webkit-scrollbar{width:5px;height:5px}
+    .table-wrap::-webkit-scrollbar-thumb{background:var(--cream-border);border-radius:3px}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+    thead{background:var(--cream-dark)}
+    th{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);padding:12px 16px;font-weight:500;border-bottom:1px solid var(--cream-border);cursor:pointer;white-space:nowrap;user-select:none}
+    th:hover{color:var(--burgundy)}
+    th.sorted{color:var(--burgundy)}
+    .arr{margin-left:3px;opacity:.5}
+    th.sorted .arr{opacity:1}
+    tbody tr{border-bottom:1px solid var(--cream-border);transition:background .1s;cursor:pointer}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:rgba(107,26,42,.03)}
+    td{padding:13px 16px;font-size:13px;color:var(--charcoal)}
+    td.td-name{color:var(--black);font-weight:500}
+    td.td-diet{font-size:12px;color:var(--gray)}
+    td.td-date{font-size:11px;color:var(--gray-lt);white-space:nowrap}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;white-space:nowrap}
+    .b-asiste{background:rgba(76,175,80,.1);color:#2E7D32;border:1px solid rgba(76,175,80,.25)}
+    .b-no_asiste{background:rgba(239,83,80,.1);color:#C62828;border:1px solid rgba(239,83,80,.2)}
+    .b-pendiente{background:rgba(196,160,68,.12);color:#8B6914;border:1px solid rgba(196,160,68,.3)}
+    .empty-row td{padding:48px;text-align:center;color:var(--gray-lt);font-size:13px}
+    .table-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-top:1px solid var(--cream-border);font-size:12px;color:var(--gray);flex-shrink:0;background:#fff;margin:0 24px 16px;border-radius:0 0 8px 8px;box-shadow:var(--shadow)}
+    .pager-btns{display:flex;gap:3px}
+    .pbtn{background:#fff;border:1px solid var(--cream-border);border-radius:4px;color:var(--gray);font-family:var(--ff-sans);font-size:12px;padding:5px 11px;cursor:pointer;transition:all .15s}
+    .pbtn:hover:not(:disabled){border-color:var(--burgundy);color:var(--burgundy)}
+    .pbtn:disabled{opacity:.35;cursor:default}
+    .pbtn.on{background:var(--burgundy);border-color:var(--burgundy);color:#fff}
+
+    /* ══════════════
+       MESAS
+    ══════════════ */
+    .mesas-stats-bar{display:flex;gap:20px;align-items:center;padding:10px 24px;background:#fff;border-bottom:1px solid var(--cream-border);flex-shrink:0}
+    .mesas-stat{font-size:12px;color:var(--gray)}
+    .mesas-stat strong{color:var(--black);font-weight:500}
+    .mesas-stat+.mesas-stat{padding-left:20px;border-left:1px solid var(--cream-border)}
+
+    .mesas-loading{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--gray);font-size:13px}
+
+    .mesas-layout{flex:1;display:grid;grid-template-columns:280px 1fr;overflow:hidden}
+
+    /* Left — unassigned */
+    .col-left{border-right:1px solid var(--cream-border);display:flex;flex-direction:column;overflow:hidden;background:#fff}
+    .col-top{padding:14px 14px 10px;border-bottom:1px solid var(--cream-border);flex-shrink:0}
+    .col-lbl{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--gray);margin-bottom:8px}
+    .col-ctr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+    .col-ctr-num{font-family:var(--ff-serif);font-size:28px;font-style:italic;color:var(--black)}
+    .col-ctr-sub{font-size:11px;color:var(--gray)}
+    .col-search{width:100%;background:var(--cream);border:1px solid var(--cream-border);border-radius:6px;padding:8px 11px;font-family:var(--ff-sans);font-size:12px;color:var(--black);outline:none;transition:border-color .2s}
+    .col-search::placeholder{color:var(--gray-lt)}
+    .col-search:focus{border-color:var(--burgundy-xlt)}
+    .guest-scroll{flex:1;overflow-y:auto;padding:8px}
+    .guest-scroll::-webkit-scrollbar{width:4px}
+    .guest-scroll::-webkit-scrollbar-thumb{background:var(--cream-border);border-radius:2px}
+
+    .g-chip{background:var(--cream);border:1px solid var(--cream-border);border-radius:6px;padding:8px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;cursor:grab;transition:all .15s;user-select:none}
+    .g-chip:hover{border-color:var(--burgundy-xlt);background:rgba(107,26,42,.03)}
+    .g-chip.dragging{opacity:.4;cursor:grabbing}
+    .g-avatar{width:28px;height:28px;border-radius:50%;background:var(--burgundy);display:flex;align-items:center;justify-content:center;font-family:var(--ff-serif);font-size:11px;font-style:italic;color:#fff;flex-shrink:0}
+    .g-info{flex:1;min-width:0}
+    .g-name{font-size:12px;color:var(--black);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .g-meta{font-size:10px;color:var(--gray);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .g-assign-btn{background:#fff;border:1px solid var(--cream-border);border-radius:4px;color:var(--burgundy);padding:4px 8px;font-size:10px;font-family:var(--ff-sans);cursor:pointer;transition:all .15s;flex-shrink:0;white-space:nowrap;font-weight:500}
+    .g-assign-btn:hover{background:var(--burgundy);border-color:var(--burgundy);color:#fff}
+    .no-guests{text-align:center;padding:32px 12px;color:var(--gray-lt);font-size:12px;line-height:1.6}
+
+    /* Right — table cards */
+    .col-right{display:flex;flex-direction:column;overflow:hidden;background:var(--cream)}
+    .tables-grid{flex:1;overflow-y:auto;padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;align-content:start}
+    .tables-grid::-webkit-scrollbar{width:5px}
+    .tables-grid::-webkit-scrollbar-thumb{background:var(--cream-border);border-radius:3px}
+
+    .t-card{background:#fff;border:1px solid var(--cream-border);border-radius:8px;overflow:hidden;transition:all .18s;box-shadow:var(--shadow)}
+    .t-card:hover{box-shadow:var(--shadow-md)}
+    .t-card.drag-over{border-color:var(--verde);box-shadow:0 0 0 3px rgba(61,99,85,.12)}
+    .t-card.is-full{border-color:var(--gold);border-width:1px}
+    .t-head{padding:12px 12px 10px;border-bottom:1px solid var(--cream-border);display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+    .t-num{font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
+    .t-name{font-family:var(--ff-serif);font-size:16px;font-style:italic;color:var(--black);font-weight:300;line-height:1.2}
+    .t-btns{display:flex;gap:3px;flex-shrink:0}
+    .t-btn{background:none;border:1px solid var(--cream-border);border-radius:3px;color:var(--gray);width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s}
+    .t-btn:hover{border-color:var(--charcoal);color:var(--charcoal)}
+    .t-btn.del:hover{border-color:#EF5350;color:#EF5350}
+    .t-cap{padding:8px 12px 9px;border-bottom:1px solid var(--cream-border)}
+    .t-cap-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+    .t-cap-lbl{font-size:10px;color:var(--gray)}
+    .t-cap-num{font-size:12px;font-weight:500;color:var(--charcoal)}
+    .t-cap-num.full{color:var(--gold)}
+    .t-bar{height:3px;background:var(--cream-border);border-radius:2px;overflow:hidden}
+    .t-bar-fill{height:100%;border-radius:2px;background:var(--burgundy);transition:width .4s}
+    .t-bar-fill.full{background:var(--gold)}
+    .t-guests{padding:9px 12px 11px;display:flex;flex-wrap:wrap;gap:4px;min-height:40px;align-content:flex-start}
+    .g-tag{display:inline-flex;align-items:center;gap:3px;background:rgba(107,26,42,.07);border:1px solid rgba(107,26,42,.15);border-radius:20px;padding:3px 6px 3px 9px;font-size:11px;color:var(--burgundy)}
+    .g-tag-x{background:none;border:none;color:var(--burgundy-xlt);cursor:pointer;padding:0 1px;display:flex;align-items:center;font-size:15px;line-height:1;transition:color .12s}
+    .g-tag-x:hover{color:#EF5350}
+    .g-tag-name{background:none;border:none;color:var(--burgundy);cursor:pointer;font-size:11px;padding:0;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;transition:color .12s;font-family:inherit}
+    .g-tag-name:hover{color:var(--black)}
+    .t-drop-hint{font-size:11px;color:var(--gray-lt);font-style:italic;font-family:var(--ff-serif)}
+    .tables-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px;text-align:center}
+    .tables-empty-icon{font-size:32px;opacity:.25;margin-bottom:12px}
+    .tables-empty-text{font-family:var(--ff-serif);font-size:20px;font-style:italic;color:var(--gray);margin-bottom:5px}
+    .tables-empty-sub{font-size:11px;color:var(--gray-lt)}
+
+    /* ══ ASSIGN DROPDOWN ══ */
+    #assign-dd{position:fixed;background:#fff;border:1px solid var(--cream-border);border-radius:8px;min-width:220px;z-index:300;box-shadow:0 8px 32px rgba(26,26,26,.14);overflow:hidden;display:none}
+    .a-dd-title{padding:8px 13px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--cream-border);background:var(--cream-dark)}
+    .a-dd-item{padding:10px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:12px;color:var(--black);transition:background .12s}
+    .a-dd-item:hover{background:rgba(107,26,42,.05)}
+    .a-dd-item.full{opacity:.35;pointer-events:none;cursor:default}
+    .a-dd-slots{font-size:10px;color:var(--gray)}
+    .a-dd-empty{padding:12px 13px;font-size:12px;color:var(--gray);font-style:italic}
+
+    /* ══ GUEST PICKER (agregar desde tarjeta de mesa) ══ */
+    #guest-picker-dd{position:fixed;background:#fff;border:1px solid var(--cream-border);border-radius:8px;width:260px;z-index:350;box-shadow:0 8px 32px rgba(26,26,26,.16);overflow:hidden;display:none}
+    .gp-hdr{padding:9px 13px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--cream-border);background:var(--cream-dark);display:flex;justify-content:space-between;align-items:center}
+    .gp-hdr-close{background:none;border:none;color:var(--gray-lt);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;transition:color .12s}
+    .gp-hdr-close:hover{color:var(--black)}
+    .gp-search{width:100%;border:none;border-bottom:1px solid var(--cream-border);padding:9px 13px;font-family:var(--ff-sans);font-size:12px;color:var(--black);outline:none;background:#fff}
+    .gp-search::placeholder{color:var(--gray-lt)}
+    .gp-list{max-height:230px;overflow-y:auto}
+    .gp-list::-webkit-scrollbar{width:4px}
+    .gp-list::-webkit-scrollbar-thumb{background:var(--cream-border);border-radius:2px}
+    .gp-item{padding:10px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:12px;color:var(--black);transition:background .12s;gap:8px}
+    .gp-item:hover{background:rgba(107,26,42,.05)}
+    .gp-status{font-size:10px;color:var(--gray);flex-shrink:0}
+    .gp-empty{padding:16px 13px;font-size:12px;color:var(--gray-lt);font-style:italic;text-align:center}
+
+    /* Botón agregar invitado en tarjeta de mesa */
+    .t-add-btn{display:flex;align-items:center;justify-content:center;gap:5px;background:none;border:none;border-top:1px dashed var(--cream-border);color:var(--gray);font-family:var(--ff-sans);font-size:11px;padding:9px 12px;cursor:pointer;transition:all .15s;width:100%}
+    .t-add-btn:hover{color:var(--burgundy);background:rgba(107,26,42,.03)}
+    .t-add-btn svg{flex-shrink:0}
+
+    /* ══ ALERT ══ */
+    #cap-alert{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--black);color:#fff;border-radius:6px;padding:10px 16px;font-size:12px;z-index:400;transition:transform .28s;display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.2);pointer-events:none;white-space:nowrap}
+    #cap-alert.show{transform:translateX(-50%) translateY(0)}
+
+    /* ══ MESA MODAL ══ */
+    #mesa-modal{position:fixed;inset:0;background:rgba(26,26,26,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(4px)}
+    #mesa-modal.open{opacity:1;pointer-events:all}
+    .mm-box{background:#fff;border:1px solid var(--cream-border);border-radius:12px;padding:28px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(26,26,26,.15);transform:translateY(12px);transition:transform .24s}
+    #mesa-modal.open .mm-box{transform:translateY(0)}
+    .mm-title{font-family:var(--ff-serif);font-size:22px;font-style:italic;font-weight:300;color:var(--black);margin-bottom:20px}
+    .mf{margin-bottom:14px}
+    .ml{display:block;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--gray);margin-bottom:5px}
+    .mi{width:100%;background:var(--cream);border:1px solid var(--cream-border);border-radius:6px;padding:10px 12px;font-family:var(--ff-sans);font-size:13px;color:var(--black);outline:none;transition:border-color .2s}
+    .mi::placeholder{color:var(--gray-lt)}
+    .mi:focus{border-color:var(--burgundy-xlt);background:#fff}
+    .cap-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+    .cap-opt{border:1px solid var(--cream-border);border-radius:6px;padding:9px;text-align:center;font-size:15px;font-weight:500;color:var(--gray);cursor:pointer;transition:all .15s;background:var(--cream)}
+    .cap-opt.sel,.cap-opt:hover{border-color:var(--burgundy);color:var(--burgundy);background:rgba(107,26,42,.05)}
+    .cap-sub{font-size:8px;display:block;margin-top:2px;letter-spacing:.06em;text-transform:uppercase;color:var(--gray-lt)}
+    .cap-opt.sel .cap-sub{color:var(--burgundy-xlt)}
+    .mm-actions{display:flex;gap:8px;margin-top:20px}
+    .mm-cancel{flex:1;padding:10px;background:#fff;border:1px solid var(--cream-border);border-radius:6px;color:var(--gray);font-family:var(--ff-sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .mm-cancel:hover{border-color:var(--charcoal);color:var(--black)}
+    .mm-save{flex:2;padding:10px;background:var(--burgundy);border:1px solid var(--burgundy);border-radius:6px;color:#fff;font-family:var(--ff-sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .mm-save:hover{background:var(--burgundy-lt)}
+    .mm-save:disabled{opacity:.5;cursor:default}
+
+    /* ══ MODALS ══ */
+    .modal-overlay{position:fixed;inset:0;background:rgba(26,26,26,.4);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+    .modal-overlay.open{opacity:1;visibility:visible}
+    .modal,.kpi-modal{background:#fff;border:1px solid var(--cream-border);border-radius:12px;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;transform:translateY(14px);transition:transform .25s;box-shadow:0 20px 60px rgba(26,26,26,.15)}
+    .modal-overlay.open .modal,.modal-overlay.open .kpi-modal{transform:translateY(0)}
+    .kpi-modal{max-width:520px;display:flex;flex-direction:column;overflow:hidden}
+    .modal-hdr{padding:24px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .modal-title{font-family:var(--ff-serif);font-size:26px;font-weight:300;font-style:italic;color:var(--black)}
+    .modal-sub{font-size:11px;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+    .modal-close{background:none;border:1px solid var(--cream-border);border-radius:6px;color:var(--gray);font-size:16px;line-height:1;padding:5px 11px;cursor:pointer;flex-shrink:0;transition:all .15s}
+    .modal-close:hover{border-color:var(--charcoal);color:var(--black)}
+    .modal-body{padding:24px;display:flex;flex-direction:column;gap:14px}
+    .modal-rule{height:1px;background:var(--cream-border);margin:2px 0}
+    .modal-footer{padding:0 24px 24px;display:flex;gap:8px;justify-content:flex-end}
+    .kpi-mhdr{padding:24px 24px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--cream-border);flex-shrink:0}
+    .kpi-mlist{overflow-y:auto;flex:1}
+    .kpi-mrow{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;border-bottom:1px solid var(--cream-border);cursor:pointer;transition:background .1s;gap:12px}
+    .kpi-mrow:last-child{border-bottom:none}
+    .kpi-mrow:hover{background:rgba(107,26,42,.03)}
+    .kpi-mname{font-size:14px;color:var(--black);font-weight:500}
+    .kpi-mdetail{font-size:12px;color:var(--gray);margin-top:2px}
+
+    .fg{display:flex;flex-direction:column;gap:5px}
+    .fl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gray)}
+    .fi,.fs{background:var(--cream);border:1px solid var(--cream-border);border-radius:6px;padding:10px 12px;color:var(--black);font-family:var(--ff-sans);font-size:13px;outline:none;transition:border-color .2s;width:100%}
+    .fi:focus,.fs:focus{border-color:var(--burgundy-xlt);background:#fff}
+    .fi::placeholder{color:var(--gray-lt)}
+    .fs{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A8A8A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer;-webkit-appearance:none}
+    .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn-sec{background:#fff;border:1px solid var(--cream-border);border-radius:6px;color:var(--charcoal);font-family:var(--ff-sans);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:10px 18px;cursor:pointer;transition:all .15s}
+    .btn-sec:hover{border-color:var(--charcoal);color:var(--black)}
+    .btn-pri{background:var(--burgundy);border:1px solid var(--burgundy);border-radius:6px;color:#fff;font-family:var(--ff-sans);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:10px 18px;cursor:pointer;transition:all .15s}
+    .btn-pri:hover{background:var(--burgundy-lt)}
+    .btn-pri:disabled{opacity:.5;cursor:default}
+    .comp-row{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+    .comp-row input[type=checkbox]{display:none}
+    .comp-box{width:18px;height:18px;border:1px solid var(--cream-border);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;color:transparent;background:#fff}
+    .comp-row input:checked+.comp-box{background:var(--burgundy);border-color:var(--burgundy);color:#fff}
+    .comp-txt{font-size:13px;color:var(--charcoal)}
+    .comp-block{background:var(--cream);border:1px solid var(--cream-border);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:11px}
+    .comp-block-title{font-family:var(--ff-serif);font-size:16px;font-style:italic;color:var(--charcoal)}
+
+    /* ══ TOAST ══ */
+    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--black);color:#fff;padding:12px 20px;border-radius:6px;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:999;transition:transform .32s cubic-bezier(.25,.46,.45,.94);white-space:nowrap}
+    #toast.show{transform:translateX(-50%) translateY(0)}
+    #toast.err{background:#C62828}
+    #toast.ok{background:var(--verde)}
+
+    /* ══ BACKDROP MOBILE ══ */
+    .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9;backdrop-filter:blur(2px)}
+
+    /* ══ MOBILE TAB BAR (mesas) ══ */
+    .mesa-tabs{display:none;border-bottom:1px solid var(--cream-border);flex-shrink:0;background:#fff}
+    .mesa-tab{flex:1;padding:12px 8px;text-align:center;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-family:var(--ff-sans)}
+    .mesa-tab.on{color:var(--burgundy);border-bottom-color:var(--burgundy)}
+
+    /* ══ MOBILE TOPBAR HAMBURGER ══ */
+    .topbar-ham{display:none;background:none;border:none;color:var(--charcoal);cursor:pointer;padding:4px;margin-right:6px}
+
+    /* ══ TABLET (≤900px) ══ */
+    @media(max-width:900px){
+      .kpi-grid{grid-template-columns:1fr 1fr}
+      .kpi-num{font-size:40px}
+    }
+
+    /* ══ MOBILE (≤640px) ══ */
+    @media(max-width:640px){
+      /* Sidebar como drawer overlay */
+      .sidebar{
+        position:fixed;left:0;top:0;height:100vh;
+        width:220px !important;
+        transform:translateX(-100%);
+        transition:transform .28s cubic-bezier(.4,0,.2,1);
+        z-index:200;
+        box-shadow:none;
+      }
+      .sidebar.expanded{
+        transform:translateX(0);
+        box-shadow:4px 0 32px rgba(0,0,0,.25);
+      }
+      /* Cuando el drawer está abierto, mostrar todo el contenido */
+      .sidebar .sb-logo{opacity:1;pointer-events:all}
+      .sidebar .sb-label{opacity:1}
+      .sidebar .sb-item{padding:11px 14px}
+      .sidebar .sb-item-text{opacity:1;pointer-events:all}
+      .sidebar .sb-footer{opacity:1;pointer-events:all}
+
+      .sb-backdrop{display:block}
+      .sb-backdrop.hidden{display:none}
+
+      /* Topbar: mostrar hamburguesa */
+      .topbar-ham{display:flex;align-items:center;justify-content:center}
+      .topbar{padding:0 14px}
+      .topbar-date{display:none}
+      .btn-refresh span{display:none}
+      .btn-refresh{padding:8px}
+
+      /* KPI */
+      .kpi-section{padding:12px 12px 0}
+      .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
+      .kpi-card{padding:14px 14px 12px}
+      .kpi-num{font-size:36px}
+      .kpi-cta{display:none}
+
+      /* Section header & filter row mobile */
+      .sec-hdr{padding:12px 12px 0}
+      .filter-row{padding:8px 12px 10px}
+      .btn-add span{display:none}
+      .mesas-stats-bar{padding:8px 14px;gap:12px;flex-wrap:wrap}
+      .mesas-stat+.mesas-stat{padding-left:12px}
+
+      /* Tabla: scroll horizontal, ocultar columnas secundarias */
+      .table-wrap{padding:0 12px 0;overflow-x:auto}
+      table{min-width:340px}
+      .col-diet,.col-comp,.col-date,.col-arr{display:none}
+      .table-footer{margin:0 12px 12px;border-radius:0 0 8px 8px;flex-wrap:wrap;gap:6px}
+
+      /* Modal full-screen en mobile */
+      .modal-overlay{padding:0;align-items:flex-end}
+      .modal,.kpi-modal{max-width:100%;border-radius:16px 16px 0 0;max-height:92vh}
+      .mm-box{border-radius:16px 16px 0 0;max-width:100%}
+      #mesa-modal{align-items:flex-end;padding:0}
+
+      /* Mesas: layout apilado con tabs */
+      .mesa-tabs{display:flex}
+      .mesas-layout{
+        grid-template-columns:1fr !important;
+        display:flex;flex-direction:column;
+      }
+      .col-left{border-right:none;border-bottom:none}
+      .col-left.mob-hidden,.col-right.mob-hidden{display:none}
+      .tables-grid{grid-template-columns:1fr;padding:12px}
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR BACKDROP (mobile) -->
+<div class="sb-backdrop hidden" id="sb-backdrop" onclick="closeSidebar()"></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- CAP ALERT -->
+<div id="cap-alert">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <span id="cap-msg">Mesa completa</span>
+</div>
+
+<!-- ASSIGN DROPDOWN -->
+<div id="assign-dd"></div>
+
+<!-- GUEST PICKER (agregar invitado a mesa desde tarjeta) -->
+<div id="guest-picker-dd"></div>
+
+<!-- MESA MODAL -->
+<div id="mesa-modal">
+  <div class="mm-box">
+    <p class="mm-title" id="mm-title">Nueva Mesa</p>
+    <form id="mesa-form" onsubmit="saveMesa(event)">
+      <div class="mf">
+        <label class="ml" for="m-nombre">Nombre de la mesa *</label>
+        <input class="mi" type="text" id="m-nombre" placeholder="Ej: Familia García" maxlength="40" required/>
+      </div>
+      <div class="mf">
+        <label class="ml" for="m-numero">Número</label>
+        <input class="mi" type="number" id="m-numero" placeholder="Ej: 5" min="1" max="99"/>
+      </div>
+      <div class="mf">
+        <label class="ml">Capacidad</label>
+        <div class="cap-grid">
+          <button type="button" class="cap-opt" data-cap="8" onclick="selCap(8)">8<span class="cap-sub">lugares</span></button>
+          <button type="button" class="cap-opt sel" data-cap="10" onclick="selCap(10)">10<span class="cap-sub">lugares</span></button>
+          <button type="button" class="cap-opt" data-cap="12" onclick="selCap(12)">12<span class="cap-sub">lugares</span></button>
+        </div>
+      </div>
+      <div class="mm-actions">
+        <button type="button" class="mm-cancel" onclick="closeMesaModal()">Cancelar</button>
+        <button type="submit" class="mm-save" id="mm-save-btn">Guardar mesa</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- KPI MODAL -->
+<div class="modal-overlay" id="kpi-overlay" onclick="if(event.target===this)closeModal('kpi-overlay')">
+  <div class="kpi-modal">
+    <div class="kpi-mhdr">
+      <div>
+        <div class="modal-title" id="kpi-modal-title">Lista</div>
+        <div class="modal-sub" id="kpi-modal-count"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('kpi-overlay')">✕</button>
+    </div>
+    <div class="kpi-mlist" id="kpi-modal-list"></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-overlay" onclick="if(event.target===this)closeModal('edit-overlay')">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="edit-title">Nombre</div>
+        <div class="modal-sub" id="edit-sub">Invitado</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('edit-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="fl">Nombre</label><input class="fi" type="text" id="edit-nombre" placeholder="Nombre"/></div>
+        <div class="fg"><label class="fl">Apellido</label><input class="fi" type="text" id="edit-apellido" placeholder="Apellido"/></div>
+      </div>
+      <div class="fg"><label class="fl">Estado</label>
+        <select class="fs" id="edit-status">
+          <option value="pendiente">Pendiente</option>
+          <option value="asiste">Asiste</option>
+          <option value="no_asiste">No asiste</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Restricción alimentaria</label><input class="fi" type="text" id="edit-diet" placeholder="Ninguna"/></div>
+      <div class="modal-rule"></div>
+      <label class="comp-row">
+        <input type="checkbox" id="edit-es-menor" onchange="toggleMenor('edit',this.checked)"/>
+        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="comp-txt">Es menor de edad 👶</span>
+      </label>
+      <div class="comp-block" id="edit-menor-block" style="display:none">
+        <div class="fg"><label class="fl">Adulto responsable</label>
+          <select class="fs" id="edit-adulto-id"><option value="">— Sin asignar —</option></select>
+        </div>
+      </div>
+      <div class="modal-rule"></div>
+      <label class="comp-row">
+        <input type="checkbox" id="edit-has-comp" onchange="toggleComp('edit',this.checked)"/>
+        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="comp-txt">Tiene acompañante</span>
+      </label>
+      <div class="comp-block" id="edit-comp" style="display:none">
+        <p class="comp-block-title">Acompañante</p>
+        <div class="frow">
+          <div class="fg"><label class="fl">Nombre</label><input class="fi" type="text" id="edit-comp-nombre" placeholder="Nombre"/></div>
+          <div class="fg"><label class="fl">Apellido</label><input class="fi" type="text" id="edit-comp-apellido" placeholder="Apellido"/></div>
+        </div>
+        <div class="fg"><label class="fl">Restricción</label><input class="fi" type="text" id="edit-comp-diet" placeholder="Ninguna"/></div>
+      </div>
+      <div id="edit-menores-cargo-wrap"></div>
+      <div class="modal-rule"></div>
+      <div class="fg">
+        <label class="fl">Link personalizado</label>
+        <div style="display:flex;gap:8px">
+          <input class="fi" type="text" id="edit-link" readonly style="cursor:pointer;font-size:11px;color:var(--gray)" onclick="copyLink()"/>
+          <button class="btn-sec" onclick="copyLink()" style="white-space:nowrap;flex-shrink:0">Copiar</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sec" onclick="closeModal('edit-overlay')">Cancelar</button>
+      <button class="btn-pri" id="edit-save-btn" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="add-overlay" onclick="if(event.target===this)closeModal('add-overlay')">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title">Nuevo invitado</div><div class="modal-sub">Agregar a la lista</div></div>
+      <button class="modal-close" onclick="closeModal('add-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="fl">Nombre *</label><input class="fi" type="text" id="add-nombre" placeholder="Nombre"/></div>
+        <div class="fg"><label class="fl">Apellido *</label><input class="fi" type="text" id="add-apellido" placeholder="Apellido"/></div>
+      </div>
+      <div class="fg"><label class="fl">Estado inicial</label>
+        <select class="fs" id="add-status">
+          <option value="pendiente">Pendiente</option>
+          <option value="asiste">Asiste</option>
+          <option value="no_asiste">No asiste</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Restricción alimentaria</label><input class="fi" type="text" id="add-diet" placeholder="Dejar en blanco si no tiene"/></div>
+      <div class="modal-rule"></div>
+      <label class="comp-row">
+        <input type="checkbox" id="add-es-menor" onchange="toggleMenor('add',this.checked)"/>
+        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="comp-txt">Es menor de edad 👶</span>
+      </label>
+      <div class="comp-block" id="add-menor-block" style="display:none">
+        <div class="fg"><label class="fl">Adulto responsable</label>
+          <select class="fs" id="add-adulto-id"><option value="">— Sin asignar —</option></select>
+        </div>
+      </div>
+      <div class="modal-rule"></div>
+      <label class="comp-row">
+        <input type="checkbox" id="add-has-comp" onchange="toggleComp('add',this.checked)"/>
+        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="comp-txt">Agregar acompañante</span>
+      </label>
+      <div class="comp-block" id="add-comp" style="display:none">
+        <p class="comp-block-title">Acompañante</p>
+        <div class="frow">
+          <div class="fg"><label class="fl">Nombre *</label><input class="fi" type="text" id="add-comp-nombre" placeholder="Nombre"/></div>
+          <div class="fg"><label class="fl">Apellido *</label><input class="fi" type="text" id="add-comp-apellido" placeholder="Apellido"/></div>
+        </div>
+        <div class="fg"><label class="fl">Restricción</label><input class="fi" type="text" id="add-comp-diet" placeholder="Ninguna"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sec" onclick="closeModal('add-overlay')">Cancelar</button>
+      <button class="btn-pri" id="add-save-btn" onclick="saveAdd()">Agregar invitado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <button class="sb-toggle" onclick="toggleSidebar()" title="Menú">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="sb-inner">
+      <div class="sb-logo">
+        <div class="sb-logo-name">Guada & <em>Marco</em></div>
+        <div class="sb-logo-date">23 · Enero · 2027</div>
+        <div class="sb-pill"><div class="sb-dot"></div>Panel Novios</div>
+      </div>
+      <nav class="sb-nav">
+        <div class="sb-label">Secciones</div>
+        <div class="sb-item active" id="nav-inicio" onclick="switchSection('inicio',this)" title="Inicio">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          <span class="sb-item-text">Inicio</span>
+        </div>
+        <div class="sb-item" id="nav-mesas" onclick="switchSection('mesas',this)" title="Gestión de Mesas">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/><path d="M9 10v11M15 7v7"/><path d="M3 7h12M9 17h12"/></svg>
+          <span class="sb-item-text">Gestión de Mesas</span>
+        </div>
+      </nav>
+      <div class="sb-footer">
+        <a href="index.html" class="sb-link">← Ir al sitio</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-area">
+
+    <!-- ── INICIO ── -->
+    <div class="section active" id="sec-inicio">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="topbar-ham" onclick="toggleSidebar()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <span class="topbar-title">Invitados</span>
+        </div>
+        <div class="topbar-right">
+          <span class="topbar-date" id="last-upd"></span>
+          <button class="btn-refresh" id="btn-refresh" onclick="load()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Actualizar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="kpi-section">
+        <div class="kpi-grid">
+          <div class="kpi-card k-asisten" onclick="openKpiModal('asiste')">
+            <div class="kpi-label">Asisten</div>
+            <div class="kpi-num" id="k-asisten">—</div>
+            <div class="kpi-sub" id="k-asisten-pct"></div>
+            <div class="kpi-cta">Ver lista →</div>
+          </div>
+          <div class="kpi-card k-no" onclick="openKpiModal('no_asiste')">
+            <div class="kpi-label">No asisten</div>
+            <div class="kpi-num" id="k-no">—</div>
+            <div class="kpi-sub" id="k-no-pct"></div>
+            <div class="kpi-cta">Ver lista →</div>
+          </div>
+          <div class="kpi-card k-pend" onclick="openKpiModal('pendiente')">
+            <div class="kpi-label">Sin respuesta</div>
+            <div class="kpi-num" id="k-pend">—</div>
+            <div class="kpi-sub" id="k-pend-pct"></div>
+            <div class="kpi-cta">Ver lista →</div>
+          </div>
+          <div class="kpi-card k-rest" onclick="openKpiModal('restriccion')">
+            <div class="kpi-label">Restricciones</div>
+            <div class="kpi-num" id="k-rest">—</div>
+            <div class="kpi-sub">con indicaciones</div>
+            <div class="kpi-cta">Ver lista →</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat menores — línea sutil -->
+      <div class="minor-stat" id="minor-stat-row" style="display:none">
+        <button class="minor-stat-chip" id="minor-chip" onclick="openKpiModal('menor')">
+          👶 <strong id="k-menor">0</strong> menores en lista
+        </button>
+      </div>
+
+      <!-- Lista de invitados: separador + acciones -->
+      <div class="sec-hdr">
+        <div class="sec-hdr-left">
+          <span class="sec-hdr-title">Lista de invitados</span>
+          <span class="sec-hdr-count" id="guest-count"></span>
+        </div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-hdr-actions">
+          <button class="btn-icon" onclick="exportCSV()" title="Exportar Excel">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+          <button class="btn-add" onclick="openAddModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Agregar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Fila: búsqueda + filtro dropdown -->
+      <div class="filter-row">
+        <div class="search-wrap">
+          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search" type="text" id="search" placeholder="Buscar invitado…" oninput="applyFilters()"/>
+        </div>
+        <div class="filter-dd-wrap">
+          <button class="filter-dd-btn" id="filter-dd-btn" onclick="toggleFilterDD(event)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            <span id="filter-label">Todos</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="filter-dd" id="filter-dd">
+            <button class="ftab on" data-f="todos" onclick="setF('todos',this)"><span>Todos</span><span class="ftab-dot"></span></button>
+            <button class="ftab" data-f="asiste" onclick="setF('asiste',this)"><span>Asisten</span><span class="ftab-dot"></span></button>
+            <button class="ftab" data-f="no_asiste" onclick="setF('no_asiste',this)"><span>No asisten</span><span class="ftab-dot"></span></button>
+            <button class="ftab" data-f="pendiente" onclick="setF('pendiente',this)"><span>Pendientes</span><span class="ftab-dot"></span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th onclick="sortBy('nombre')">Nombre <span class="arr" id="arr-nombre">↕</span></th>
+            <th onclick="sortBy('asistencia_status')">Estado <span class="arr" id="arr-asistencia_status">↕</span></th>
+            <th class="col-diet" onclick="sortBy('indicaciones_alimentarias')">Restricción <span class="arr col-arr" id="arr-indicaciones_alimentarias">↕</span></th>
+            <th class="col-comp" onclick="sortBy('acompanante')">Acompañante <span class="arr col-arr" id="arr-acompanante">↕</span></th>
+            <th class="col-date" onclick="sortBy('rsvp_at')">Confirmó <span class="arr col-arr" id="arr-rsvp_at">↕</span></th>
+            <th style="width:30px;cursor:default"></th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="pager-info"></span>
+        <div class="pager-btns" id="pager-btns"></div>
+      </div>
+    </div>
+
+    <!-- ── MESAS ── -->
+    <div class="section" id="sec-mesas">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="topbar-ham" onclick="toggleSidebar()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <span class="topbar-title">Gestión de Mesas</span>
+        </div>
+        <div class="topbar-right">
+          <button class="btn-add" onclick="openMesaModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Nueva Mesa</span>
+          </button>
+        </div>
+      </div>
+      <div class="mesas-stats-bar">
+        <span class="mesas-stat"><strong id="stat-mesas">0</strong> mesas</span>
+        <span class="mesas-stat"><strong id="stat-asig">0</strong> asignados</span>
+        <span class="mesas-stat"><strong id="stat-libre">0</strong> por ubicar</span>
+        <span class="mesas-stat"><strong id="stat-total">0</strong> invitados</span>
+      </div>
+      <!-- TABS mobile -->
+      <div class="mesa-tabs" id="mesa-tabs">
+        <button class="mesa-tab" id="tab-guests" onclick="switchMesaTab('guests')">Sin mesa (<span id="tab-guests-n">0</span>)</button>
+        <button class="mesa-tab on" id="tab-mesas" onclick="switchMesaTab('mesas')">Mesas (<span id="tab-mesas-n">0</span>)</button>
+      </div>
+
+      <div class="mesas-loading" id="mesas-loading">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="animation:spin 1s linear infinite;color:var(--burgundy-xlt)"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        Cargando invitados y mesas…
+      </div>
+
+      <div class="mesas-layout" id="mesas-layout" style="display:none">
+        <div class="col-left">
+          <div class="col-top">
+            <div class="col-lbl">Invitados por ubicar</div>
+            <div class="col-ctr">
+              <span class="col-ctr-num" id="col-num">0</span>
+              <span class="col-ctr-sub">sin mesa</span>
+            </div>
+            <input class="col-search" type="text" id="mesa-search" placeholder="Buscar invitado…" oninput="onMesaSearch(this.value)"/>
+          </div>
+          <div class="guest-scroll" id="guest-scroll"></div>
+        </div>
+        <div class="col-right">
+          <div class="tables-grid" id="tables-grid"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ══ SUPABASE ══ */
+const SB_URL='https://idqoqmmgiwnevkhjqomn.supabase.co';
+const SB_KEY='sb_publishable_1i92fSKjNO8AMVvnStjDwQ_hUW8Qehs';
+const db=window.supabase.createClient(SB_URL,SB_KEY);
+
+/* ══ SIDEBAR ══ */
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const bd=document.getElementById('sb-backdrop');
+  sb.classList.toggle('expanded');
+  bd.classList.toggle('hidden',!sb.classList.contains('expanded'));
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('expanded');
+  document.getElementById('sb-backdrop').classList.add('hidden');
+}
+
+let mesaTabActive='mesas';
+function switchMesaTab(tab){
+  mesaTabActive=tab;
+  const left=document.getElementById('guest-scroll')?.closest('.col-left');
+  const right=document.querySelector('.col-right');
+  if(left)left.classList.toggle('mob-hidden',tab!=='guests');
+  if(right)right.classList.toggle('mob-hidden',tab!=='mesas');
+  document.getElementById('tab-guests')?.classList.toggle('on',tab==='guests');
+  document.getElementById('tab-mesas')?.classList.toggle('on',tab==='mesas');
+}
+
+/* ══ SECTIONS ══ */
+function switchSection(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='mesas')loadMesas();
+  closeSidebar();
+}
+
+/* ════════════════════════
+   INVITADOS
+════════════════════════ */
+const PAGE=10;
+let all=[],filtered=[],page=1,sortCol='nombre',sortDir=1,activeF='todos',editingGuest=null;
+
+async function load(){
+  const btn=document.getElementById('btn-refresh');
+  if(btn)btn.classList.add('spinning');
+  const{data,error}=await db.from('invitados')
+    .select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,rsvp_at,acompanante_id,es_menor,adulto_responsable_id')
+    .order('apellido',{ascending:true});
+  if(btn)btn.classList.remove('spinning');
+  if(error){document.getElementById('tbody').innerHTML='<tr class="empty-row"><td colspan="6">Error al cargar datos.</td></tr>';return;}
+  all=data||[];
+  const now=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const el=document.getElementById('last-upd');
+  if(el)el.textContent='Actualizado '+now;
+  updateKPIs();applyFilters();
+}
+
+function updateKPIs(){
+  const total=all.length;
+  const asisten=all.filter(g=>g.asistencia_status==='asiste').length;
+  const no=all.filter(g=>g.asistencia_status==='no_asiste').length;
+  const pend=all.filter(g=>!g.asistencia_status||g.asistencia_status==='pendiente').length;
+  const rest=all.filter(g=>g.indicaciones_alimentarias?.trim()).length;
+  sv('k-asisten',asisten);sv('k-no',no);sv('k-pend',pend);sv('k-rest',rest);
+  const pct=n=>total?Math.round(n/total*100)+'% del total':'';
+  sv('k-asisten-pct',pct(asisten));sv('k-no-pct',pct(no));sv('k-pend-pct',pct(pend));
+  // Menores
+  const menores=all.filter(g=>g.es_menor);
+  sv('k-menor',menores.length);
+  const row=document.getElementById('minor-stat-row');
+  if(row)row.style.display=menores.length?'flex':'none';
+}
+function sv(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+
+/* ══ FILTER DROPDOWN ══ */
+function toggleFilterDD(e){
+  e.stopPropagation();
+  const btn=document.getElementById('filter-dd-btn');
+  const dd=document.getElementById('filter-dd');
+  btn.classList.toggle('open');
+  dd.classList.toggle('open');
+}
+function closeFilterDD(){
+  document.getElementById('filter-dd-btn')?.classList.remove('open');
+  document.getElementById('filter-dd')?.classList.remove('open');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.filter-dd-wrap'))closeFilterDD();
+});
+
+const F_LABELS={todos:'Todos',asiste:'Asisten',no_asiste:'No asisten',pendiente:'Pendientes'};
+function setF(f,btn){
+  activeF=f;page=1;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  // Update dropdown button label + active state
+  const lbl=document.getElementById('filter-label');
+  if(lbl)lbl.textContent=F_LABELS[f]||'Filtrar';
+  const ddbtn=document.getElementById('filter-dd-btn');
+  if(ddbtn)ddbtn.classList.toggle('active',f!=='todos');
+  closeFilterDD();
+  applyFilters();
+}
+
+function applyFilters(){
+  const q=(document.getElementById('search')?.value||'').toLowerCase();
+  filtered=all.filter(g=>{
+    const name=(g.nombre+' '+g.apellido).toLowerCase();
+    const st=g.asistencia_status||'pendiente';
+    if(q&&!name.includes(q))return false;
+    if(activeF==='todos')return true;
+    if(activeF==='pendiente')return !g.asistencia_status||st==='pendiente';
+    return st===activeF;
+  });
+  doSort();
+}
+
+function sortBy(col){
+  sortDir=sortCol===col?-sortDir:1;sortCol=col;
+  document.querySelectorAll('th').forEach(t=>t.classList.remove('sorted'));
+  const arrEl=document.getElementById('arr-'+col);
+  if(arrEl){arrEl.closest('th').classList.add('sorted');arrEl.textContent=sortDir===1?'↑':'↓';}
+  doSort();
+}
+
+function doSort(){
+  const cm=buildCompMap();
+  filtered.sort((a,b)=>{
+    let va,vb;
+    if(sortCol==='nombre'){va=(a.apellido+a.nombre).toLowerCase();vb=(b.apellido+b.nombre).toLowerCase();}
+    else if(sortCol==='acompanante'){va=a.acompanante_id?(cm[a.acompanante_id]||'1'):'0';vb=b.acompanante_id?(cm[b.acompanante_id]||'1'):'0';}
+    else{va=(a[sortCol]||'').toString().toLowerCase();vb=(b[sortCol]||'').toString().toLowerCase();}
+    return va<vb?-sortDir:va>vb?sortDir:0;
+  });
+  page=1;render();
+}
+
+function buildCompMap(){const m={};all.forEach(g=>{m[g.id]=g.nombre+' '+g.apellido;});return m;}
+
+function render(){
+  const tbody=document.getElementById('tbody');
+  const cm=buildCompMap();
+  const total=filtered.length,pages=Math.max(1,Math.ceil(total/PAGE));
+  if(page>pages)page=pages;
+  const start=(page-1)*PAGE,slice=filtered.slice(start,start+PAGE);
+  if(!slice.length){
+    tbody.innerHTML='<tr class="empty-row"><td colspan="6">Ningún invitado coincide con los filtros.</td></tr>';
+  }else{
+    tbody.innerHTML=slice.map(g=>{
+      const st=g.asistencia_status||'pendiente';
+      const bcl=st==='asiste'?'b-asiste':st==='no_asiste'?'b-no_asiste':'b-pendiente';
+      const btx=st==='asiste'?'Asiste':st==='no_asiste'?'No asiste':'Pendiente';
+      const comp=g.acompanante_id&&cm[g.acompanante_id]?esc(cm[g.acompanante_id]):'<span style="color:var(--gray-lt)">—</span>';
+      const diet=g.indicaciones_alimentarias?esc(g.indicaciones_alimentarias):'<span style="color:var(--gray-lt)">—</span>';
+      const fecha=g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}):'<span style="color:var(--gray-lt)">—</span>';
+      const menorBadge=g.es_menor?'<span class="badge-menor">👶 menor</span>':'';
+      return`<tr onclick="openEditModal('${g.id}')">
+        <td class="td-name">${esc(g.apellido)}, ${esc(g.nombre)}${menorBadge}</td>
+        <td><span class="badge ${bcl}">${btx}</span></td>
+        <td class="td-diet col-diet">${diet}</td>
+        <td class="col-comp" style="font-size:13px;color:var(--gray)">${comp}</td>
+        <td class="td-date col-date">${fecha}</td>
+        <td style="text-align:right;color:var(--gray-lt);font-size:16px">›</td>
+      </tr>`;
+    }).join('');
+  }
+  sv('guest-count',total?`${total} invitado${total!==1?'s':''}`:'');
+  sv('pager-info',total?`${start+1}–${Math.min(start+PAGE,total)} de ${total} invitados`:'');
+  const pb=document.getElementById('pager-btns');
+  if(pages<=1){pb.innerHTML='';return;}
+  let h=`<button class="pbtn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=pages;i++){
+    if(pages<=7||i===1||i===pages||Math.abs(i-page)<=1)
+      h+=`<button class="pbtn ${i===page?'on':''}" onclick="goPage(${i})">${i}</button>`;
+    else if(Math.abs(i-page)===2)
+      h+=`<button class="pbtn" disabled style="border:none;padding:5px 4px">…</button>`;
+  }
+  h+=`<button class="pbtn" onclick="goPage(${page+1})" ${page===pages?'disabled':''}>›</button>`;
+  pb.innerHTML=h;
+}
+function goPage(p){const pages=Math.ceil(filtered.length/PAGE);if(p<1||p>pages)return;page=p;render();}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* Edit modal */
+function openEditModal(id){
+  const g=all.find(x=>x.id===id);if(!g)return;
+  editingGuest=g;
+  document.getElementById('edit-title').textContent=g.nombre+' '+g.apellido;
+  document.getElementById('edit-sub').textContent=g.asistencia_status==='asiste'?'Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente';
+  document.getElementById('edit-nombre').value=g.nombre||'';
+  document.getElementById('edit-apellido').value=g.apellido||'';
+  document.getElementById('edit-status').value=g.asistencia_status||'pendiente';
+  document.getElementById('edit-diet').value=g.indicaciones_alimentarias||'';
+  // Menor
+  document.getElementById('edit-es-menor').checked=!!g.es_menor;
+  document.getElementById('edit-menor-block').style.display=g.es_menor?'flex':'none';
+  fillAdultoSelect('edit-adulto-id',g.adulto_responsable_id,g.id);
+  const comp=g.acompanante_id?all.find(x=>x.id===g.acompanante_id):null;
+  document.getElementById('edit-has-comp').checked=!!comp;
+  document.getElementById('edit-comp').style.display=comp?'flex':'none';
+  document.getElementById('edit-comp-nombre').value=comp?.nombre||'';
+  document.getElementById('edit-comp-apellido').value=comp?.apellido||'';
+  document.getElementById('edit-comp-diet').value=comp?.indicaciones_alimentarias||'';
+  // Menores a cargo (si este invitado es adulto)
+  const wrap=document.getElementById('edit-menores-cargo-wrap');
+  if(wrap){
+    const menoresACargo=all.filter(x=>x.adulto_responsable_id===g.id);
+    if(!g.es_menor&&menoresACargo.length){
+      wrap.innerHTML=`<div class="menores-cargo">
+        <div class="menores-cargo-title">👶 Menores a cargo (${menoresACargo.length})</div>
+        ${menoresACargo.map(m=>`<div class="menor-row">
+          <span class="menor-row-name" onclick="switchToMenor('${m.id}')">${esc(m.apellido)}, ${esc(m.nombre)}</span>
+          <span style="font-size:10px;color:var(--gray)">${m.asistencia_status==='asiste'?'Asiste':m.asistencia_status==='no_asiste'?'No asiste':'Pendiente'}</span>
+        </div>`).join('')}
+      </div>`;
+    }else{wrap.innerHTML='';}
+  }
+  const idx=window.location.pathname.replace('dashboard.html','index.html');
+  document.getElementById('edit-link').value=`${window.location.origin}${idx}?id=${g.id}`;
+  document.getElementById('edit-save-btn').disabled=false;
+  document.getElementById('edit-save-btn').textContent='Guardar cambios';
+  openModal('edit-overlay');
+}
+function toggleComp(prefix,checked){document.getElementById(prefix+'-comp').style.display=checked?'flex':'none';}
+
+function switchToMenor(id){
+  closeModal('edit-overlay');
+  setTimeout(()=>openEditModal(id),200);
+}
+
+function toggleMenor(prefix,checked){
+  document.getElementById(prefix+'-menor-block').style.display=checked?'flex':'none';
+}
+
+function fillAdultoSelect(selectId, currentAdultoId, excludeId){
+  const sel=document.getElementById(selectId);if(!sel)return;
+  const adultos=all.filter(g=>!g.es_menor&&g.id!==excludeId);
+  sel.innerHTML='<option value="">— Sin asignar —</option>'
+    +adultos.map(g=>`<option value="${g.id}"${g.id===currentAdultoId?' selected':''}>${esc(g.apellido)}, ${esc(g.nombre)}</option>`).join('');
+}
+
+async function saveEdit(){
+  if(!editingGuest)return;
+  const btn=document.getElementById('edit-save-btn');btn.disabled=true;btn.textContent='Guardando…';
+  const nombre=document.getElementById('edit-nombre').value.trim();
+  const apellido=document.getElementById('edit-apellido').value.trim();
+  if(!nombre||!apellido){showToast('Completá nombre y apellido.','err');btn.disabled=false;btn.textContent='Guardar cambios';return;}
+  const hasComp=document.getElementById('edit-has-comp').checked;
+  const cNombre=document.getElementById('edit-comp-nombre').value.trim();
+  const cApellido=document.getElementById('edit-comp-apellido').value.trim();
+  if(hasComp&&(!cNombre||!cApellido)){showToast('Completá datos del acompañante.','err');btn.disabled=false;btn.textContent='Guardar cambios';return;}
+  const existComp=editingGuest.acompanante_id?all.find(x=>x.id===editingGuest.acompanante_id):null;
+  const esMenor=document.getElementById('edit-es-menor').checked;
+  const adultoId=esMenor?(document.getElementById('edit-adulto-id').value||null):null;
+  const payload={nombre,apellido,asistencia_status:document.getElementById('edit-status').value,indicaciones_alimentarias:document.getElementById('edit-diet').value.trim()||null,es_menor:esMenor,adulto_responsable_id:adultoId};
+  if(hasComp){
+    if(existComp){
+      await db.from('invitados').update({nombre:cNombre,apellido:cApellido,indicaciones_alimentarias:document.getElementById('edit-comp-diet').value.trim()||null}).eq('id',existComp.id);
+      const ci=all.findIndex(x=>x.id===existComp.id);if(ci>=0)Object.assign(all[ci],{nombre:cNombre,apellido:cApellido,indicaciones_alimentarias:document.getElementById('edit-comp-diet').value.trim()||null});
+    }else{
+      const{data:nc}=await db.from('invitados').insert({nombre:cNombre,apellido:cApellido,asistencia_status:'pendiente',indicaciones_alimentarias:document.getElementById('edit-comp-diet').value.trim()||null,acompanante_id:editingGuest.id}).select().single();
+      if(nc){payload.acompanante_id=nc.id;all.push(nc);}
+    }
+  }else{
+    if(existComp){await db.from('invitados').update({acompanante_id:null}).eq('id',existComp.id);const ci=all.findIndex(x=>x.id===existComp.id);if(ci>=0)all[ci].acompanante_id=null;}
+    payload.acompanante_id=null;
+  }
+  const{error}=await db.from('invitados').update(payload).eq('id',editingGuest.id);
+  if(error){showToast('Error al guardar.','err');btn.disabled=false;btn.textContent='Guardar cambios';return;}
+  const idx=all.findIndex(x=>x.id===editingGuest.id);if(idx>=0)Object.assign(all[idx],payload);
+  // Sincronizar también con guestPool (mesas) si el invitado está ahí
+  const pi=guestPool.findIndex(x=>x.id===editingGuest.id);
+  if(pi>=0)Object.assign(guestPool[pi],{nombre:payload.nombre,apellido:payload.apellido,asistencia_status:payload.asistencia_status,indicaciones_alimentarias:payload.indicaciones_alimentarias});
+  showToast('Cambios guardados ✓','ok');closeModal('edit-overlay');updateKPIs();applyFilters();
+  // Si la sección de mesas está activa, re-renderizar
+  if(document.getElementById('sec-mesas')?.classList.contains('active'))renderMesas();
+}
+function copyLink(){navigator.clipboard.writeText(document.getElementById('edit-link').value).then(()=>showToast('Link copiado ✓','ok'));}
+
+function openAddModal(){
+  ['add-nombre','add-apellido','add-diet','add-comp-nombre','add-comp-apellido','add-comp-diet'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('add-es-menor').checked=false;
+  document.getElementById('add-menor-block').style.display='none';
+  fillAdultoSelect('add-adulto-id',null,null);
+  document.getElementById('add-status').value='pendiente';
+  document.getElementById('add-has-comp').checked=false;
+  document.getElementById('add-comp').style.display='none';
+  document.getElementById('add-save-btn').disabled=false;
+  document.getElementById('add-save-btn').textContent='Agregar invitado';
+  openModal('add-overlay');
+}
+async function saveAdd(){
+  const btn=document.getElementById('add-save-btn');btn.disabled=true;btn.textContent='Guardando…';
+  const nombre=document.getElementById('add-nombre').value.trim();
+  const apellido=document.getElementById('add-apellido').value.trim();
+  if(!nombre||!apellido){showToast('Nombre y apellido son obligatorios.','err');btn.disabled=false;btn.textContent='Agregar invitado';return;}
+  const hasComp=document.getElementById('add-has-comp').checked;
+  const cNombre=document.getElementById('add-comp-nombre').value.trim();
+  const cApellido=document.getElementById('add-comp-apellido').value.trim();
+  if(hasComp&&(!cNombre||!cApellido)){showToast('Completá datos del acompañante.','err');btn.disabled=false;btn.textContent='Agregar invitado';return;}
+  const addEsMenor=document.getElementById('add-es-menor').checked;
+  const addAdultoId=addEsMenor?(document.getElementById('add-adulto-id').value||null):null;
+  const{data:g1,error:e1}=await db.from('invitados').insert({nombre,apellido,asistencia_status:document.getElementById('add-status').value,indicaciones_alimentarias:document.getElementById('add-diet').value.trim()||null,es_menor:addEsMenor,adulto_responsable_id:addAdultoId}).select().single();
+  if(e1){showToast('Error al agregar.','err');btn.disabled=false;btn.textContent='Agregar invitado';return;}
+  if(hasComp){
+    const{data:g2}=await db.from('invitados').insert({nombre:cNombre,apellido:cApellido,asistencia_status:'pendiente',indicaciones_alimentarias:document.getElementById('add-comp-diet').value.trim()||null,acompanante_id:g1.id}).select().single();
+    if(g2){await db.from('invitados').update({acompanante_id:g2.id}).eq('id',g1.id);g1.acompanante_id=g2.id;all.push(g1,g2);showToast(nombre+' y '+cNombre+' agregados ✓','ok');}
+  }else{all.push(g1);showToast(nombre+' '+apellido+' agregado ✓','ok');}
+  closeModal('add-overlay');updateKPIs();applyFilters();
+}
+
+/* KPI Modal */
+function openKpiModal(type){
+  const titles={asiste:'Asisten',no_asiste:'No asisten',pendiente:'Sin respuesta',restriccion:'Con restricciones',menor:'Menores de edad'};
+  let guests=type==='restriccion'?all.filter(g=>g.indicaciones_alimentarias?.trim())
+    :type==='pendiente'?all.filter(g=>!g.asistencia_status||g.asistencia_status==='pendiente')
+    :type==='menor'?all.filter(g=>g.es_menor)
+    :all.filter(g=>g.asistencia_status===type);
+  guests=[...guests].sort((a,b)=>(a.apellido+a.nombre).localeCompare(b.apellido+b.nombre,'es'));
+  sv('kpi-modal-title',titles[type]);
+  sv('kpi-modal-count',guests.length===1?'1 persona':guests.length+' personas');
+  document.getElementById('kpi-modal-list').innerHTML=!guests.length
+    ?'<div style="text-align:center;padding:36px 22px;color:var(--gray-lt);font-size:13px">Sin resultados</div>'
+    :guests.map(g=>{
+      const adulto=type==='menor'&&g.adulto_responsable_id?all.find(x=>x.id===g.adulto_responsable_id):null;
+      const detail=type==='restriccion'?esc(g.indicaciones_alimentarias)
+        :type==='menor'?(adulto?'A cargo de: '+esc(adulto.nombre)+' '+esc(adulto.apellido):'Sin adulto asignado')
+        :g.rsvp_at?'Confirmó el '+new Date(g.rsvp_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'Sin fecha de confirmación';
+      return`<div class="kpi-mrow" onclick="openKpiGuest('${g.id}')"><div><div class="kpi-mname">${esc(g.apellido)}, ${esc(g.nombre)}</div><div class="kpi-mdetail">${detail}</div></div><span style="color:var(--gray-lt);font-size:16px">›</span></div>`;
+    }).join('');
+  openModal('kpi-overlay');
+}
+function openKpiGuest(id){closeModal('kpi-overlay');setTimeout(()=>openEditModal(id),200);}
+
+function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+
+function exportCSV(){
+  const byId=Object.fromEntries(all.map(g=>[g.id,g]));
+  const rows=all.map(g=>{
+    const st=g.asistencia_status==='asiste'?'Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente';
+    const comp=g.acompanante_id?byId[g.acompanante_id]:null;
+    const menoresACargo=all.filter(m=>m.adulto_responsable_id===g.id);
+    return{
+      'Apellido':g.apellido||'',
+      'Nombre':g.nombre||'',
+      'Estado':st,
+      'Menor de edad':g.es_menor?'Sí':'',
+      'Adulto responsable':g.es_menor&&g.adulto_responsable_id&&byId[g.adulto_responsable_id]
+        ?(byId[g.adulto_responsable_id].apellido+', '+byId[g.adulto_responsable_id].nombre):'',
+      'Menores a cargo':menoresACargo.length
+        ?menoresACargo.map(m=>m.apellido+', '+m.nombre).join(' / '):'',
+      'Acompañante':comp?(comp.apellido+', '+comp.nombre):'',
+      'Restricción alimentaria':g.indicaciones_alimentarias||'',
+      'Confirmó':g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR'):'',
+    };
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:18},{wch:12},{wch:10},{wch:22},{wch:26},{wch:22},{wch:26},{wch:12}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invitados');
+  XLSX.writeFile(wb,'invitados-'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+let toastTimer;
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show'+(type==='err'?' err':type==='ok'?' ok':'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='',3200);
+}
+
+/* ════════════════════════
+   GESTIÓN DE MESAS
+════════════════════════ */
+let mesas=[],guestPool=[],mesaSearchQ='',editingMesaId=null,capSel=10,mesasReady=false;
+let draggedId=null,capTimer=null;
+
+async function loadMesas(){
+  document.getElementById('mesas-loading').style.display='flex';
+  document.getElementById('mesas-layout').style.display='none';
+
+  const[{data:mesasData,error:e1},{data:guestsData,error:e2}]=await Promise.all([
+    db.from('mesas').select('*').order('numero'),
+    db.from('invitados').select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,mesa_id,acompanante_id,rsvp_at').order('apellido')
+  ]);
+
+  if(e1||e2){
+    document.getElementById('mesas-loading').innerHTML='<span style="color:#C62828">Error al cargar. ¿Creaste la tabla mesas en Supabase?</span>';
+    return;
+  }
+  mesas=mesasData||[];
+  // Excluir solo los que explícitamente no asisten; pendientes (null) y confirmados sí aparecen
+  guestPool=(guestsData||[]).filter(g=>g.asistencia_status!=='no_asiste');
+  mesasReady=true;
+  document.getElementById('mesas-loading').style.display='none';
+  document.getElementById('mesas-layout').style.display='grid';
+  renderMesas();
+}
+
+function getUnassigned(){
+  const q=mesaSearchQ.toLowerCase();
+  return guestPool.filter(g=>!g.mesa_id&&(!q||(g.nombre+' '+g.apellido).toLowerCase().includes(q)));
+}
+
+function renderMesas(){
+  const unassigned=guestPool.filter(g=>!g.mesa_id);
+  const assigned=guestPool.filter(g=>g.mesa_id);
+  sv('stat-mesas',mesas.length);sv('stat-asig',assigned.length);
+  sv('stat-libre',unassigned.length);sv('stat-total',guestPool.length);
+  sv('col-num',getUnassigned().length);
+  // Actualizar contadores de tabs mobile
+  sv('tab-guests-n',unassigned.length);sv('tab-mesas-n',mesas.length);
+  renderGuestList();renderTablesGrid();
+  // Aplicar estado de tab en mobile
+  switchMesaTab(mesaTabActive);
+}
+
+function renderGuestList(){
+  const c=document.getElementById('guest-scroll');
+  const list=getUnassigned();
+  if(!list.length){
+    const total=guestPool.filter(g=>!g.mesa_id).length;
+    c.innerHTML=`<div class="no-guests">${total===0?'🎉 ¡Todos los invitados están asignados!':mesaSearchQ?'Sin resultados para "'+mesaSearchQ+'"':'No hay invitados por ubicar'}</div>`;
+    return;
+  }
+  c.innerHTML=list.map(g=>{
+    const ini=((g.nombre||'')[0]||'?').toUpperCase()+((g.apellido||'')[0]||'').toUpperCase();
+    const stLabel=g.asistencia_status==='asiste'?'✓ Confirmado':'⏳ Pendiente';
+    const meta=(g.indicaciones_alimentarias?'🍽 '+g.indicaciones_alimentarias+' · ':'')+stLabel;
+    const nombre=g.nombre||'(sin nombre)';const apellido=g.apellido||'';
+    return`<div class="g-chip" draggable="true" data-gid="${g.id}"
+      ondragstart="onDragStart(event,'${g.id}')"
+      ondragend="onDragEnd()">
+      <div class="g-avatar">${ini}</div>
+      <div class="g-info">
+        <div class="g-name">${nombre} ${apellido}</div>
+        <div class="g-meta">${meta}</div>
+      </div>
+      <button class="g-assign-btn" onclick="event.stopPropagation();openAssignDD(event,'${g.id}')">→ Mesa</button>
+    </div>`;
+  }).join('');
+}
+
+function renderTablesGrid(){
+  const grid=document.getElementById('tables-grid');
+  if(!mesas.length){
+    grid.innerHTML=`<div class="tables-empty"><div class="tables-empty-icon">🪑</div><div class="tables-empty-text">Sin mesas todavía</div><div class="tables-empty-sub">Usá "Nueva Mesa" para empezar</div></div>`;
+    return;
+  }
+  grid.innerHTML=mesas.map(mesa=>{
+    const mesaGuests=guestPool.filter(g=>g.mesa_id===mesa.id);
+    const count=mesaGuests.length;
+    const isFull=count>=mesa.capacidad_max;
+    const pct=Math.min(100,count/mesa.capacidad_max*100);
+    const tags=mesaGuests.map(g=>{
+      const dot=g.asistencia_status==='asiste'?'🟢':'🟡';
+      const menorMark=g.es_menor?' 👶':'';
+      return`<span class="g-tag">${dot} <button class="g-tag-name" onclick="openGuestFromMesa('${g.id}')" title="Editar invitado">${esc(g.nombre||'?')} ${esc(g.apellido||'')}${menorMark}</button><button class="g-tag-x" onclick="unassignGuest('${g.id}')" title="Quitar de la mesa">×</button></span>`;
+    }).join('');
+    return`<div class="t-card${isFull?' is-full':''}" id="tc-${mesa.id}"
+      ondragover="onDragOver(event,'${mesa.id}')"
+      ondragleave="onDragLeave(event,'${mesa.id}')"
+      ondrop="onDrop(event,'${mesa.id}')">
+      <div class="t-head">
+        <div>
+          <div class="t-num">Mesa ${mesa.numero}</div>
+          <div class="t-name">${esc(mesa.nombre)}</div>
+        </div>
+        <div class="t-btns">
+          <button class="t-btn" onclick="openEditMesa('${mesa.id}')" title="Editar">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="t-btn del" onclick="deleteMesa('${mesa.id}')" title="Eliminar">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="t-cap">
+        <div class="t-cap-row">
+          <span class="t-cap-lbl">Ocupación</span>
+          <span class="t-cap-num${isFull?' full':''}">${count} / ${mesa.capacidad_max}</span>
+        </div>
+        <div class="t-bar"><div class="t-bar-fill${isFull?' full':''}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="t-guests">${tags||'<span class="t-drop-hint">Arrastrá invitados aquí</span>'}</div>
+      ${!isFull?`<button class="t-add-btn" onclick="openGuestPicker(event,'${mesa.id}')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar invitado
+      </button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function onMesaSearch(v){mesaSearchQ=v;sv('col-num',getUnassigned().length);renderGuestList();}
+
+/* Drag & Drop */
+function onDragStart(e,gid){
+  draggedId=gid;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',gid);
+  setTimeout(()=>{const el=document.querySelector(`[data-gid="${gid}"]`);if(el)el.classList.add('dragging');},0);
+}
+function onDragEnd(){
+  draggedId=null;
+  document.querySelectorAll('.g-chip').forEach(c=>c.classList.remove('dragging'));
+  document.querySelectorAll('.t-card').forEach(c=>c.classList.remove('drag-over'));
+}
+function onDragOver(e,tid){e.preventDefault();document.getElementById('tc-'+tid)?.classList.add('drag-over');}
+function onDragLeave(e,tid){const c=document.getElementById('tc-'+tid);if(c&&!c.contains(e.relatedTarget))c.classList.remove('drag-over');}
+function onDrop(e,tid){e.preventDefault();const gid=e.dataTransfer.getData('text/plain')||draggedId;document.getElementById('tc-'+tid)?.classList.remove('drag-over');if(gid)assignGuest(gid,tid);draggedId=null;}
+
+/* Assign / Unassign — Supabase */
+async function assignGuest(gid,tid){
+  const mesa=mesas.find(t=>t.id===tid);if(!mesa)return;
+  const count=guestPool.filter(g=>g.mesa_id===tid).length;
+  if(count>=mesa.capacidad_max){showCapAlert('"'+mesa.nombre+'" está completa ('+mesa.capacidad_max+'/'+mesa.capacidad_max+')');return;}
+  // optimistic update
+  const g=guestPool.find(x=>x.id===gid);
+  if(g)g.mesa_id=tid;
+  renderMesas();
+  const{error}=await db.from('invitados').update({mesa_id:tid}).eq('id',gid);
+  if(error){
+    if(g)g.mesa_id=null; // revert
+    renderMesas();
+    showToast('Error al asignar','err');return;
+  }
+  if(g)showToast('✓ '+g.nombre+' '+g.apellido+' → '+mesa.nombre,'ok');
+}
+
+async function unassignGuest(gid){
+  const g=guestPool.find(x=>x.id===gid);
+  if(g)g.mesa_id=null; // optimistic
+  renderMesas();
+  const{error}=await db.from('invitados').update({mesa_id:null}).eq('id',gid);
+  if(error){
+    // reload on error
+    showToast('Error','err');
+    loadMesas();
+  }
+}
+
+/* Assign dropdown */
+function openAssignDD(e,gid){
+  const dd=document.getElementById('assign-dd');
+  if(!mesas.length){
+    dd.innerHTML='<div class="a-dd-empty">No hay mesas creadas todavía.</div>';
+  }else{
+    const items=mesas.map(mesa=>{
+      const slots=mesa.capacidad_max-guestPool.filter(g=>g.mesa_id===mesa.id).length;
+      const full=slots<=0;
+      return`<div class="a-dd-item${full?' full':''}" onclick="${full?'':'doAssign(\''+gid+'\',\''+mesa.id+'\')'}" style="${full?'':'cursor:pointer'}">
+        <span>Mesa ${mesa.numero}: ${esc(mesa.nombre)}</span>
+        <span class="a-dd-slots">${full?'Llena':slots+' libre'+(slots!==1?'s':'')}</span>
+      </div>`;
+    }).join('');
+    dd.innerHTML='<div class="a-dd-title">Asignar a mesa</div>'+items;
+  }
+  const btn=e.currentTarget||e.target;
+  const rect=btn.getBoundingClientRect();
+  dd.style.display='block';
+  const left=Math.max(8,Math.min(rect.left,window.innerWidth-230));
+  dd.style.left=left+'px';
+  dd.style.top=(rect.bottom+6)+'px';
+}
+function doAssign(gid,tid){closeAssignDD();assignGuest(gid,tid);}
+function closeAssignDD(){const dd=document.getElementById('assign-dd');if(dd)dd.style.display='none';}
+
+/* ══ GUEST PICKER — agregar invitado a mesa desde la tarjeta ══ */
+let pickerMesaId=null;
+
+function openGuestPicker(e,mesaId){
+  e.stopPropagation();
+  pickerMesaId=mesaId;
+  const mesa=mesas.find(m=>m.id===mesaId);
+  buildPickerDD(mesa,'');
+  const dd=document.getElementById('guest-picker-dd');
+  dd.style.display='block';
+  // Posicionar inteligentemente
+  const btn=e.currentTarget||e.target;
+  const rect=btn.getBoundingClientRect();
+  const left=Math.max(8,Math.min(rect.left,window.innerWidth-268));
+  const spaceBelow=window.innerHeight-(rect.bottom+6);
+  if(spaceBelow<260&&rect.top>260){
+    dd.style.top='';dd.style.bottom=(window.innerHeight-rect.top+4)+'px';
+  }else{
+    dd.style.bottom='';dd.style.top=(rect.bottom+4)+'px';
+  }
+  dd.style.left=left+'px';
+  // Focus al buscador
+  setTimeout(()=>dd.querySelector('.gp-search')?.focus(),50);
+}
+
+function buildPickerDD(mesa,q){
+  const dd=document.getElementById('guest-picker-dd');
+  const unassigned=guestPool.filter(g=>!g.mesa_id&&
+    (!q||(g.nombre+' '+g.apellido).toLowerCase().includes(q.toLowerCase())));
+  const mesaNombre=esc(mesa?.nombre||'mesa');
+  const items=unassigned.length
+    ?unassigned.map(g=>{
+        const st=g.asistencia_status==='asiste'?'✓ Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente';
+        return`<div class="gp-item" onclick="pickGuest('${g.id}')">
+          <span>${esc(g.nombre||'?')} ${esc(g.apellido||'')}</span>
+          <span class="gp-status">${st}</span>
+        </div>`;
+      }).join('')
+    :`<div class="gp-empty">${q?'Sin resultados.':'Todos los invitados ya tienen mesa.'}</div>`;
+  dd.innerHTML=`
+    <div class="gp-hdr">
+      <span>Agregar a ${mesaNombre}</span>
+      <button class="gp-hdr-close" onclick="closeGuestPicker()">×</button>
+    </div>
+    <input class="gp-search" placeholder="Buscar invitado…" value="${esc(q)}"
+      oninput="filterPicker(this.value)" id="gp-search"/>
+    <div class="gp-list" id="gp-list">${items}</div>`;
+}
+
+function filterPicker(q){
+  const mesa=mesas.find(m=>m.id===pickerMesaId);
+  buildPickerDD(mesa,q);
+  // Re-focus sin mover el caret
+  const inp=document.getElementById('gp-search');
+  if(inp){const v=inp.value;inp.focus();inp.value='';inp.value=v;}
+}
+
+function pickGuest(gid){
+  const tid=pickerMesaId; // guardar antes de cerrar
+  closeGuestPicker();
+  if(tid)assignGuest(gid,tid);
+}
+
+function closeGuestPicker(){
+  document.getElementById('guest-picker-dd').style.display='none';
+  pickerMesaId=null;
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#guest-picker-dd')&&!e.target.closest('.t-add-btn'))closeGuestPicker();
+});
+
+/* Editar invitado desde mesas — sincroniza all[] y abre el modal */
+function openGuestFromMesa(gid){
+  // Asegurar que el invitado esté en all[] para que el modal funcione
+  if(!all.find(x=>x.id===gid)){
+    const g=guestPool.find(x=>x.id===gid);
+    if(g)all.push({...g});
+  }
+  openEditModal(gid);
+}
+
+/* Mesa modal */
+function openMesaModal(){
+  editingMesaId=null;capSel=10;
+  sv('mm-title','Nueva Mesa');
+  document.getElementById('m-nombre').value='';
+  document.getElementById('m-numero').value=mesas.length+1;
+  updateCapBtns(10);
+  document.getElementById('mm-save-btn').disabled=false;
+  document.getElementById('mm-save-btn').textContent='Guardar mesa';
+  document.getElementById('mesa-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('m-nombre').focus(),250);
+}
+function openEditMesa(tid){
+  const mesa=mesas.find(t=>t.id===tid);if(!mesa)return;
+  editingMesaId=tid;capSel=mesa.capacidad_max;
+  sv('mm-title','Editar mesa');
+  document.getElementById('m-nombre').value=mesa.nombre;
+  document.getElementById('m-numero').value=mesa.numero;
+  updateCapBtns(mesa.capacidad_max);
+  document.getElementById('mm-save-btn').disabled=false;
+  document.getElementById('mm-save-btn').textContent='Guardar cambios';
+  document.getElementById('mesa-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('m-nombre').focus(),250);
+}
+function closeMesaModal(){document.getElementById('mesa-modal').classList.remove('open');editingMesaId=null;}
+function selCap(n){capSel=n;updateCapBtns(n);}
+function updateCapBtns(sel){document.querySelectorAll('.cap-opt').forEach(b=>b.classList.toggle('sel',parseInt(b.dataset.cap)===sel));}
+
+async function saveMesa(e){
+  e.preventDefault();
+  const btn=document.getElementById('mm-save-btn');
+  btn.disabled=true;btn.textContent='Guardando…';
+  const nombre=document.getElementById('m-nombre').value.trim();
+  const numero=parseInt(document.getElementById('m-numero').value)||(mesas.length+1);
+  if(!nombre){btn.disabled=false;btn.textContent='Guardar mesa';return;}
+  if(editingMesaId){
+    const count=guestPool.filter(g=>g.mesa_id===editingMesaId).length;
+    if(capSel<count){showCapAlert('Hay '+count+' asignados, no podés bajar la capacidad');btn.disabled=false;btn.textContent='Guardar cambios';return;}
+    const{error}=await db.from('mesas').update({nombre,numero,capacidad_max:capSel}).eq('id',editingMesaId);
+    if(error){showToast('Error al actualizar','err');btn.disabled=false;btn.textContent='Guardar cambios';return;}
+    const idx=mesas.findIndex(t=>t.id===editingMesaId);if(idx>=0)Object.assign(mesas[idx],{nombre,numero,capacidad_max:capSel});
+    showToast('Mesa actualizada ✓','ok');
+  }else{
+    const{data,error}=await db.from('mesas').insert({nombre,numero,capacidad_max:capSel}).select().single();
+    if(error){showToast('Error al crear mesa. ¿Ejecutaste el SQL en Supabase?','err');btn.disabled=false;btn.textContent='Guardar mesa';return;}
+    mesas.push(data);
+    showToast('Mesa "'+nombre+'" creada ✓','ok');
+  }
+  closeMesaModal();renderMesas();
+}
+
+async function deleteMesa(tid){
+  const mesa=mesas.find(t=>t.id===tid);if(!mesa)return;
+  const count=guestPool.filter(g=>g.mesa_id===tid).length;
+  if(!confirm('¿Eliminar "'+mesa.nombre+'"?'+(count>0?' Los '+count+' invitados asignados quedarán sin mesa.':'')))return;
+  guestPool.forEach(g=>{if(g.mesa_id===tid)g.mesa_id=null;});
+  mesas=mesas.filter(t=>t.id!==tid);
+  renderMesas();
+  const{error}=await db.from('mesas').delete().eq('id',tid);
+  if(error){showToast('Error al eliminar','err');loadMesas();}
+}
+
+function showCapAlert(msg){
+  const el=document.getElementById('cap-alert');
+  document.getElementById('cap-msg').textContent=msg;
+  el.classList.add('show');
+  clearTimeout(capTimer);capTimer=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+/* ══ EVENTS ══ */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal('kpi-overlay');closeModal('edit-overlay');closeModal('add-overlay');closeMesaModal();closeAssignDD();}
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#assign-dd')&&!e.target.closest('.g-assign-btn'))closeAssignDD();
+});
+document.getElementById('mesa-modal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('mesa-modal'))closeMesaModal();
+});
+
+/* ══ BOOT ══ */
+load();
+</script>
+</body>
+</html>
