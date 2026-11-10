@@ -409,6 +409,15 @@
     #toast.err{background:#C62828}
     #toast.ok{background:var(--verde)}
 
+    /* ══ MENORES ══ */
+    .minor-stat{display:flex;align-items:center;gap:14px;padding:10px 24px 0;flex-shrink:0}
+    .minor-stat-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(196,160,68,.08);border:1px solid rgba(196,160,68,.25);border-radius:20px;padding:5px 13px;font-size:12px;color:#8B6914;cursor:pointer;font-family:var(--ff-sans);transition:background .15s}
+    .minor-stat-chip:hover{background:rgba(196,160,68,.15)}
+    .badge-menor{display:inline-flex;align-items:center;background:rgba(196,160,68,.1);border:1px solid rgba(196,160,68,.25);border-radius:20px;padding:1px 7px;font-size:9px;letter-spacing:.04em;color:#8B6914;margin-left:5px;vertical-align:middle}
+    .menores-cargo{background:rgba(196,160,68,.06);border:1px solid rgba(196,160,68,.2);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+    .menores-cargo-title{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8B6914;font-weight:500}
+    .menor-row-name{background:none;border:none;color:var(--burgundy);cursor:pointer;font-size:13px;padding:0;text-decoration:underline;text-decoration-style:dotted;font-family:var(--ff-sans)}
+
     /* ══ BACKDROP MOBILE ══ */
     .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9;backdrop-filter:blur(2px)}
 
@@ -584,6 +593,18 @@
       <div class="fg"><label class="fl">Restricción alimentaria</label><input class="fi" type="text" id="edit-diet" placeholder="Ninguna"/></div>
       <div class="modal-rule"></div>
       <label class="comp-row">
+        <input type="checkbox" id="edit-es-menor" onchange="toggleMenor('edit',this.checked)"/>
+        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="comp-txt">Es menor de edad 👶</span>
+      </label>
+      <div class="comp-block" id="edit-menor-block" style="display:none">
+        <div class="fg"><label class="fl">Adulto responsable</label>
+          <select class="fs" id="edit-adulto-id"><option value="">— Sin asignar —</option></select>
+        </div>
+      </div>
+      <div id="edit-menores-cargo-wrap"></div>
+      <div class="modal-rule"></div>
+      <label class="comp-row">
         <input type="checkbox" id="edit-has-comp" onchange="toggleComp('edit',this.checked)"/>
         <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
         <span class="comp-txt">Tiene acompañante</span>
@@ -632,6 +653,17 @@
         </select>
       </div>
       <div class="fg"><label class="fl">Restricción alimentaria</label><input class="fi" type="text" id="add-diet" placeholder="Dejar en blanco si no tiene"/></div>
+      <div class="modal-rule"></div>
+      <label class="comp-row">
+        <input type="checkbox" id="add-es-menor" onchange="toggleMenor('add',this.checked)"/>
+        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="comp-txt">Es menor de edad 👶</span>
+      </label>
+      <div class="comp-block" id="add-menor-block" style="display:none">
+        <div class="fg"><label class="fl">Adulto responsable</label>
+          <select class="fs" id="add-adulto-id"><option value="">— Sin asignar —</option></select>
+        </div>
+      </div>
       <div class="modal-rule"></div>
       <label class="comp-row">
         <input type="checkbox" id="add-has-comp" onchange="toggleComp('add',this.checked)"/>
@@ -732,6 +764,11 @@
             <div class="kpi-cta">Ver lista →</div>
           </div>
         </div>
+      </div>
+
+      <!-- Chip menores (se muestra solo si hay) -->
+      <div class="minor-stat" id="minor-stat-row" style="display:none">
+        <button class="minor-stat-chip" id="minor-chip" onclick="openKpiModal('menor')">👶 <strong id="k-menor">0</strong> menores en lista</button>
       </div>
 
       <!-- Lista de invitados: separador + acciones -->
@@ -895,7 +932,7 @@ async function load(){
   const btn=document.getElementById('btn-refresh');
   if(btn)btn.classList.add('spinning');
   const{data,error}=await db.from('invitados')
-    .select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,rsvp_at,acompanante_id')
+    .select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,rsvp_at,acompanante_id,es_menor,adulto_responsable_id')
     .order('apellido',{ascending:true});
   if(btn)btn.classList.remove('spinning');
   if(error){document.getElementById('tbody').innerHTML='<tr class="empty-row"><td colspan="6">Error al cargar datos.</td></tr>';return;}
@@ -915,6 +952,11 @@ function updateKPIs(){
   sv('k-asisten',asisten);sv('k-no',no);sv('k-pend',pend);sv('k-rest',rest);
   const pct=n=>total?Math.round(n/total*100)+'% del total':'';
   sv('k-asisten-pct',pct(asisten));sv('k-no-pct',pct(no));sv('k-pend-pct',pct(pend));
+  // Menores
+  const menores=all.filter(g=>g.es_menor);
+  sv('k-menor',menores.length);
+  const mrow=document.getElementById('minor-stat-row');
+  if(mrow)mrow.style.display=menores.length?'flex':'none';
 }
 function sv(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 
@@ -999,8 +1041,9 @@ function render(){
       const comp=g.acompanante_id&&cm[g.acompanante_id]?esc(cm[g.acompanante_id]):'<span style="color:var(--gray-lt)">—</span>';
       const diet=g.indicaciones_alimentarias?esc(g.indicaciones_alimentarias):'<span style="color:var(--gray-lt)">—</span>';
       const fecha=g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}):'<span style="color:var(--gray-lt)">—</span>';
+      const menorBadge=g.es_menor?'<span class="badge-menor">👶 menor</span>':'';
       return`<tr onclick="openEditModal('${g.id}')">
-        <td class="td-name">${esc(g.apellido)}, ${esc(g.nombre)}</td>
+        <td class="td-name">${esc(g.apellido)}, ${esc(g.nombre)}${menorBadge}</td>
         <td><span class="badge ${bcl}">${btx}</span></td>
         <td class="td-diet col-diet">${diet}</td>
         <td class="col-comp" style="font-size:13px;color:var(--gray)">${comp}</td>
@@ -1042,6 +1085,18 @@ function openEditModal(id){
   document.getElementById('edit-comp-nombre').value=comp?.nombre||'';
   document.getElementById('edit-comp-apellido').value=comp?.apellido||'';
   document.getElementById('edit-comp-diet').value=comp?.indicaciones_alimentarias||'';
+  // Menor
+  const esMenor=!!g.es_menor;
+  document.getElementById('edit-es-menor').checked=esMenor;
+  document.getElementById('edit-menor-block').style.display=esMenor?'flex':'none';
+  fillAdultoSelect('edit-adulto-id',g.adulto_responsable_id,g.id);
+  // Menores a cargo (si es adulto)
+  const menoresACargo=all.filter(m=>m.es_menor&&m.adulto_responsable_id===g.id);
+  const wrap=document.getElementById('edit-menores-cargo-wrap');
+  if(!esMenor&&menoresACargo.length){
+    wrap.innerHTML=`<div class="menores-cargo"><div class="menores-cargo-title">Menores a cargo (${menoresACargo.length})</div>`
+      +menoresACargo.map(m=>`<button class="menor-row-name" onclick="switchToMenor('${m.id}')">${esc(m.apellido)}, ${esc(m.nombre)}</button>`).join('')+'</div>';
+  }else{wrap.innerHTML='';}
   const idx=window.location.pathname.replace('dashboard.html','index.html');
   document.getElementById('edit-link').value=`${window.location.origin}${idx}?id=${g.id}`;
   document.getElementById('edit-save-btn').disabled=false;
@@ -1049,6 +1104,18 @@ function openEditModal(id){
   openModal('edit-overlay');
 }
 function toggleComp(prefix,checked){document.getElementById(prefix+'-comp').style.display=checked?'flex':'none';}
+function toggleMenor(prefix,checked){document.getElementById(prefix+'-menor-block').style.display=checked?'flex':'none';}
+function fillAdultoSelect(selectId,currentId,excludeId){
+  const sel=document.getElementById(selectId);if(!sel)return;
+  const adultos=all.filter(g=>!g.es_menor&&g.id!==excludeId);
+  sel.innerHTML='<option value="">— Sin asignar —</option>'
+    +adultos.map(g=>`<option value="${g.id}"${g.id===currentId?' selected':''}>${esc(g.apellido)}, ${esc(g.nombre)}</option>`).join('');
+}
+function switchToMenor(id){closeModal('edit-overlay');setTimeout(()=>openEditModal(id),200);}
+function openGuestFromMesa(gid){
+  if(!all.find(x=>x.id===gid)){const g=guestPool.find(x=>x.id===gid);if(g)all.push({...g});}
+  openEditModal(gid);
+}
 
 async function saveEdit(){
   if(!editingGuest)return;
@@ -1061,7 +1128,9 @@ async function saveEdit(){
   const cApellido=document.getElementById('edit-comp-apellido').value.trim();
   if(hasComp&&(!cNombre||!cApellido)){showToast('Completá datos del acompañante.','err');btn.disabled=false;btn.textContent='Guardar cambios';return;}
   const existComp=editingGuest.acompanante_id?all.find(x=>x.id===editingGuest.acompanante_id):null;
-  const payload={nombre,apellido,asistencia_status:document.getElementById('edit-status').value,indicaciones_alimentarias:document.getElementById('edit-diet').value.trim()||null};
+  const esMenor=document.getElementById('edit-es-menor').checked;
+  const adultoId=esMenor?(document.getElementById('edit-adulto-id').value||null):null;
+  const payload={nombre,apellido,asistencia_status:document.getElementById('edit-status').value,indicaciones_alimentarias:document.getElementById('edit-diet').value.trim()||null,es_menor:esMenor,adulto_responsable_id:adultoId};
   if(hasComp){
     if(existComp){
       await db.from('invitados').update({nombre:cNombre,apellido:cApellido,indicaciones_alimentarias:document.getElementById('edit-comp-diet').value.trim()||null}).eq('id',existComp.id);
@@ -1091,6 +1160,9 @@ function openAddModal(){
   document.getElementById('add-status').value='pendiente';
   document.getElementById('add-has-comp').checked=false;
   document.getElementById('add-comp').style.display='none';
+  document.getElementById('add-es-menor').checked=false;
+  document.getElementById('add-menor-block').style.display='none';
+  fillAdultoSelect('add-adulto-id',null,null);
   document.getElementById('add-save-btn').disabled=false;
   document.getElementById('add-save-btn').textContent='Agregar invitado';
   openModal('add-overlay');
@@ -1104,7 +1176,9 @@ async function saveAdd(){
   const cNombre=document.getElementById('add-comp-nombre').value.trim();
   const cApellido=document.getElementById('add-comp-apellido').value.trim();
   if(hasComp&&(!cNombre||!cApellido)){showToast('Completá datos del acompañante.','err');btn.disabled=false;btn.textContent='Agregar invitado';return;}
-  const{data:g1,error:e1}=await db.from('invitados').insert({nombre,apellido,asistencia_status:document.getElementById('add-status').value,indicaciones_alimentarias:document.getElementById('add-diet').value.trim()||null}).select().single();
+  const addEsMenor=document.getElementById('add-es-menor').checked;
+  const addAdultoId=addEsMenor?(document.getElementById('add-adulto-id').value||null):null;
+  const{data:g1,error:e1}=await db.from('invitados').insert({nombre,apellido,asistencia_status:document.getElementById('add-status').value,indicaciones_alimentarias:document.getElementById('add-diet').value.trim()||null,es_menor:addEsMenor,adulto_responsable_id:addAdultoId}).select().single();
   if(e1){showToast('Error al agregar.','err');btn.disabled=false;btn.textContent='Agregar invitado';return;}
   if(hasComp){
     const{data:g2}=await db.from('invitados').insert({nombre:cNombre,apellido:cApellido,asistencia_status:'pendiente',indicaciones_alimentarias:document.getElementById('add-comp-diet').value.trim()||null,acompanante_id:g1.id}).select().single();
@@ -1115,9 +1189,10 @@ async function saveAdd(){
 
 /* KPI Modal */
 function openKpiModal(type){
-  const titles={asiste:'Asisten',no_asiste:'No asisten',pendiente:'Sin respuesta',restriccion:'Con restricciones'};
+  const titles={asiste:'Asisten',no_asiste:'No asisten',pendiente:'Sin respuesta',restriccion:'Con restricciones',menor:'Menores de edad'};
   let guests=type==='restriccion'?all.filter(g=>g.indicaciones_alimentarias?.trim())
     :type==='pendiente'?all.filter(g=>!g.asistencia_status||g.asistencia_status==='pendiente')
+    :type==='menor'?all.filter(g=>g.es_menor)
     :all.filter(g=>g.asistencia_status===type);
   guests=[...guests].sort((a,b)=>(a.apellido+a.nombre).localeCompare(b.apellido+b.nombre,'es'));
   sv('kpi-modal-title',titles[type]);
@@ -1137,10 +1212,26 @@ function openModal(id){document.getElementById(id).classList.add('open');documen
 function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
 
 function exportCSV(){
-  const cm=buildCompMap();
-  const rows=all.map(g=>({'Apellido':g.apellido||'','Nombre':g.nombre||'','Estado':g.asistencia_status==='asiste'?'Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente','Restricción':g.indicaciones_alimentarias||'','Acompañante':g.acompanante_id&&cm[g.acompanante_id]?cm[g.acompanante_id]:'','Confirmó':g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR'):''}));
+  const byId=Object.fromEntries(all.map(g=>[g.id,g]));
+  const rows=all.map(g=>{
+    const st=g.asistencia_status==='asiste'?'Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente';
+    const comp=g.acompanante_id?byId[g.acompanante_id]:null;
+    const adulto=g.es_menor&&g.adulto_responsable_id?byId[g.adulto_responsable_id]:null;
+    const menoresACargo=all.filter(m=>m.es_menor&&m.adulto_responsable_id===g.id);
+    return{
+      'Apellido':g.apellido||'',
+      'Nombre':g.nombre||'',
+      'Estado':st,
+      'Menor de edad':g.es_menor?'Sí':'',
+      'Adulto responsable':adulto?(adulto.apellido+', '+adulto.nombre):'',
+      'Menores a cargo':menoresACargo.length?menoresACargo.map(m=>m.apellido+', '+m.nombre).join(' / '):'',
+      'Acompañante':comp?(comp.apellido+', '+comp.nombre):'',
+      'Restricción alimentaria':g.indicaciones_alimentarias||'',
+      'Confirmó':g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR'):'',
+    };
+  });
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:18},{wch:18},{wch:12},{wch:26},{wch:22},{wch:12}];
+  ws['!cols']=[{wch:18},{wch:18},{wch:12},{wch:10},{wch:22},{wch:26},{wch:22},{wch:26},{wch:12}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invitados');
   XLSX.writeFile(wb,'invitados-'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
