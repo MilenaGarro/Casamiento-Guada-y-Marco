@@ -20,7 +20,10 @@
       --charcoal:    #3A3A3A;
       --gray:        #8A8A8A;
       --white:       #FFFFFF;
-      --gold:        #C9A96E;
+      --gold:        #C4A044;
+      --gold-lt:     #D4B85A;
+      --verde:       #3D6355;
+      --verde-lt:    #4E7D6B;
 
       --ff-serif: 'Cormorant Garamond', Georgia, serif;
       --ff-sans:  'Montserrat', system-ui, sans-serif;
@@ -95,7 +98,7 @@
     .hero-divider {
       width: 1px;
       height: 56px;
-      background: linear-gradient(to bottom, transparent, var(--burgundy-xlt), transparent);
+      background: linear-gradient(to bottom, transparent, var(--gold), transparent);
       margin: 0 auto 32px;
     }
 
@@ -163,7 +166,7 @@
       font-size: 10px;
       letter-spacing: 0.4em;
       text-transform: uppercase;
-      color: var(--burgundy);
+      color: var(--gold);
       margin-bottom: 16px;
       font-weight: 500;
     }
@@ -181,7 +184,7 @@
     .section-rule {
       width: 48px;
       height: 1px;
-      background: var(--burgundy);
+      background: var(--gold);
       margin-bottom: 28px;
     }
 
@@ -195,6 +198,7 @@
     .countdown-wrap {
       background: var(--black);
       padding: 60px 24px;
+      border-top: 1px solid var(--verde);
       text-align: center;
     }
 
@@ -203,7 +207,7 @@
       font-size: 10px;
       letter-spacing: 0.4em;
       text-transform: uppercase;
-      color: var(--burgundy-xlt);
+      color: var(--gold-lt);
       margin-bottom: 36px;
       font-weight: 400;
     }
@@ -226,7 +230,7 @@
       font-family: var(--ff-serif);
       font-size: clamp(44px, 12vw, 80px);
       font-weight: 300;
-      color: var(--white);
+      color: var(--gold);
       line-height: 1;
       min-width: 1ch;
       text-align: center;
@@ -238,14 +242,14 @@
       font-size: 9px;
       letter-spacing: 0.3em;
       text-transform: uppercase;
-      color: var(--gray);
+      color: var(--gold);
       font-weight: 400;
     }
 
     .countdown-sep {
       font-family: var(--ff-serif);
       font-size: clamp(32px, 8vw, 60px);
-      color: var(--burgundy);
+      color: var(--gold);
       line-height: 1;
       padding-top: 4px;
       font-weight: 300;
@@ -272,6 +276,7 @@
     .info-card:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-soft);
+      border-color: var(--gold);
     }
 
     .info-card-icon {
@@ -283,7 +288,7 @@
       align-items: center;
       justify-content: center;
       margin-bottom: 20px;
-      color: var(--burgundy);
+      color: var(--verde);
     }
 
     .info-card-label {
@@ -291,7 +296,7 @@
       font-size: 9px;
       letter-spacing: 0.4em;
       text-transform: uppercase;
-      color: var(--burgundy);
+      color: var(--verde);
       margin-bottom: 10px;
       font-weight: 500;
     }
@@ -386,6 +391,7 @@
       padding: 20px 16px;
       text-align: center;
       border-radius: 1px;
+      border-top: 2px solid var(--verde);
     }
 
     .dress-item-title {
@@ -405,7 +411,7 @@
     .dress-item-avoid {
       margin-top: 8px;
       font-size: 11px;
-      color: var(--burgundy);
+      color: var(--verde);
       font-style: italic;
     }
 
@@ -442,7 +448,7 @@
       margin: 0 auto;
     }
 
-    .rsvp-section .section-label { color: var(--burgundy-xlt); }
+    .rsvp-section .section-label { color: var(--gold-lt); }
     .rsvp-section .section-title { color: var(--white); }
     .rsvp-section .section-rule  { background: var(--burgundy-xlt); }
     .rsvp-section .section-body  { color: rgba(255,255,255,0.6); }
@@ -698,10 +704,30 @@
       line-height: 1.7;
     }
 
+    .btn-calendar {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      padding: 12px 24px;
+      border: 1px solid var(--burgundy);
+      border-radius: 2px;
+      background: transparent;
+      color: var(--cream);
+      font-family: var(--ff-sans);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-calendar:hover { background: var(--burgundy); color: var(--white); }
+    .btn-calendar.hidden { display: none; }
+
     /* ===== FOOTER ===== */
     footer {
       background: var(--black);
-      border-top: 1px solid rgba(255,255,255,0.05);
+      border-top: 1px solid var(--verde);
       padding: 48px 24px;
       text-align: center;
     }
@@ -1008,9 +1034,6 @@
     </div>
     <p class="info-card-label">El lugar</p>
     <h3 class="info-card-title">Espacio Azalia</h3>
-    <p class="info-card-body">
-      Nos encontramos en Espacio Azalia, un espacio único diseñado para celebrar los momentos más especiales de la vida.
-    </p>
     <div class="btn-row">
       <a href="https://share.google/wACPY7eP3f6OIPlRN" target="_blank" rel="noopener" class="btn btn-primary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1030,22 +1053,8 @@
       </svg>
     </div>
     <p class="info-card-label">Dress Code</p>
-    <h3 class="info-card-title">Elegancia Formal</h3>
-    <p class="info-card-body" style="margin-bottom:16px;">
-      Queremos que todos brillen esa noche. El evento es de etiqueta formal. Por favor, reservá el blanco y los colores de novia para la homenajeada.
-    </p>
-    <div class="dress-items">
-      <div class="dress-item">
-        <p class="dress-item-title">Ellas</p>
-        <p class="dress-item-body">Vestido largo o formal, traje de pantalón elegante</p>
-        <p class="dress-item-avoid">Evitar: blanco, crema e ivory</p>
-      </div>
-      <div class="dress-item">
-        <p class="dress-item-title">Ellos</p>
-        <p class="dress-item-body">Traje con corbata o moño, smoking es bienvenido</p>
-        <p class="dress-item-avoid">Evitar: casual, jeans</p>
-      </div>
-    </div>
+    <h3 class="info-card-title">Elegante Formal</h3>
+
   </div>
 
 </div>
@@ -1192,6 +1201,12 @@
       </div>
       <p class="success-title" id="success-title">¡Gracias!</p>
       <p class="success-body" id="success-body">Tu confirmación fue registrada. ¡Los esperamos el 23 de enero!</p>
+      <a id="btn-add-calendar" class="btn-calendar hidden" href="#" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Agregar al calendario
+      </a>
     </div>
 
   </div>
@@ -1248,6 +1263,11 @@ async function loadGuestFromURL() {
   }
 
   currentGuest = data;
+  // Update hero invite text with guest first name
+  const heroInvite = document.getElementById('hero-invite-text');
+  if (heroInvite && data.nombre) {
+    heroInvite.textContent = data.nombre + ', te invitamos';
+  }
   const banner = document.getElementById('guest-banner');
   banner.style.display = 'flex';
   document.getElementById('guest-banner-text').textContent =
@@ -1268,6 +1288,8 @@ function showAlreadyAnswered() {
   const success = document.getElementById('rsvp-success');
   success.classList.add('visible');
   document.getElementById('success-title').textContent = 'Ya confirmaste 🎉';
+  var calBtnYa = document.getElementById('btn-add-calendar');
+  if (calBtnYa) { calBtnYa.href = buildCalendarURL(); calBtnYa.classList.remove('hidden'); }
   document.getElementById('success-body').textContent =
     `Recibimos tu respuesta. Si necesitás hacer algún cambio, escribile a los novios directamente.`;
 }
@@ -1325,62 +1347,8 @@ function listenCompanionDietary() {
   // No longer needed with checkbox approach — kept empty for compatibility
 }
 
-/* ——— SUBMIT RSVP (real Supabase) ——— */
-async function submitRSVP(e) {
-  e.preventDefault();
-
-  const btn = document.getElementById('submit-btn');
-  const attending = document.querySelector('input[name="asistencia"]:checked')?.value;
-  if (!attending) return;
-
-  btn.textContent = 'Guardando…';
-  btn.disabled = true;
-
-  // Actualizar invitado principal
-  const companionChecked = document.getElementById('companion-checkbox')?.checked;
-  const acompSinId = (!companionGuest && companionChecked)
-    ? `${document.getElementById('comp-nombre')?.value || ''} ${document.getElementById('comp-apellido')?.value || ''}`.trim()
-    : null;
-
-  const updatePayload = {
-    asistencia_status:         attending,
-    indicaciones_alimentarias: document.getElementById('dietary-input')?.value || null,
-    mensaje:                   null,
-    acompanante_sin_id:        acompSinId,
-    rsvp_at:                   new Date().toISOString(),
-  };
-
-  const { error } = await db
-    .from('invitados')
-    .update(updatePayload)
-    .eq('id', currentGuest.id);
-
-  if (error) {
-    showToast('❌ Error al guardar. Intentá de nuevo.');
-    btn.textContent = 'Confirmar asistencia';
-    btn.disabled = false;
-    return;
-  }
-
-  // Actualizar acompañante conocido (si aplica y el checkbox fue tildado)
-  if (companionGuest && companionChecked) {
-    await db
-      .from('invitados')
-      .update({
-        asistencia_status:         'asiste',
-        indicaciones_alimentarias: document.getElementById('companion-dietary')?.value || null,
-        rsvp_at:                   new Date().toISOString(),
-      })
-      .eq('id', companionGuest.id);
-  } else if (companionGuest && !companionChecked && attending === 'asiste') {
-    // Companion won't attend
-    await db
-      .from('invitados')
-      .update({ asistencia_status: 'no_asiste', rsvp_at: new Date().toISOString() })
-      .eq('id', companionGuest.id);
-  }
-
-  // Mostrar pantalla de éxito
+/* ——— SHOW SUCCESS STATE ——— */
+function showSuccess(attending) {
   document.getElementById('rsvp-form').style.display = 'none';
   document.getElementById('guest-banner').style.display = 'none';
   const success = document.getElementById('rsvp-success');
@@ -1388,6 +1356,8 @@ async function submitRSVP(e) {
 
   if (attending === 'asiste') {
     document.getElementById('success-title').textContent = '¡Nos vemos el 23! 🥂';
+    var calBtn = document.getElementById('btn-add-calendar');
+    if (calBtn) { calBtn.href = buildCalendarURL(); calBtn.classList.remove('hidden'); }
     document.getElementById('success-body').textContent =
       `¡Qué alegría tenerte con nosotros! Ya tenemos tu confirmación. Te esperamos el 23 de enero en Espacio Azalia.`;
   } else {
@@ -1397,8 +1367,123 @@ async function submitRSVP(e) {
   }
 }
 
-<<<<<<< Updated upstream
-=======
+/* ——— RESET SUBMIT BUTTON ——— */
+function resetBtn() {
+  const btn = document.getElementById('submit-btn');
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg> Confirmar asistencia`;
+  btn.disabled = false;
+}
+
+/* ——— SUBMIT RSVP (real Supabase) ——— */
+function buildCalendarURL() {
+    var title   = encodeURIComponent('Casamiento Guada & Marco 💍');
+    var start   = '20270123T210000';
+    var end     = '20270124T020000';
+    var tz      = encodeURIComponent('America/Argentina/Buenos_Aires');
+    var loc     = encodeURIComponent('Espacio Azalia, Buenos Aires');
+    var details = encodeURIComponent('¡Los esperamos para celebrar junto a Guada & Marco!');
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+      + '&text=' + title + '&dates=' + start + '/' + end
+      + '&ctz=' + tz + '&location=' + loc + '&details=' + details;
+  }
+
+  async function submitRSVP(e) {
+  e.preventDefault();
+
+  const btn = document.getElementById('submit-btn');
+  const attending = document.querySelector('input[name="asistencia"]:checked')?.value;
+  if (!attending) return;
+
+  // Guard: without a loaded guest we cannot persist anything
+  if (!currentGuest) {
+    showToast('⚠️ Usá el link personalizado de tu invitación para confirmar.');
+    return;
+  }
+
+  btn.textContent = 'Guardando…';
+  btn.disabled = true;
+
+  try {
+    const companionChecked = document.getElementById('companion-checkbox')?.checked;
+    const acompSinId = (!companionGuest && companionChecked)
+      ? `${document.getElementById('comp-nombre')?.value || ''} ${document.getElementById('comp-apellido')?.value || ''}`.trim()
+      : null;
+
+    const updatePayload = {
+      asistencia_status:         attending,
+      indicaciones_alimentarias: document.getElementById('dietary-input')?.value || null,
+      mensaje:                   null,
+      rsvp_at:                   new Date().toISOString(),
+    };
+
+    const { error } = await db
+      .from('invitados')
+      .update(updatePayload)
+      .eq('id', currentGuest.id);
+
+    if (error) {
+      showToast('❌ Error al guardar. Intentá de nuevo.');
+      resetBtn();
+      return;
+    }
+
+    // Actualizar acompañante conocido (si aplica y el checkbox fue tildado)
+    if (companionGuest && companionChecked) {
+      await db
+        .from('invitados')
+        .update({
+          asistencia_status:         'asiste',
+          indicaciones_alimentarias: document.getElementById('companion-dietary')?.value || null,
+          rsvp_at:                   new Date().toISOString(),
+        })
+        .eq('id', companionGuest.id);
+    } else if (companionGuest && !companionChecked && attending === 'asiste') {
+      // Companion won't attend
+      await db
+        .from('invitados')
+        .update({ asistencia_status: 'no_asiste', rsvp_at: new Date().toISOString() })
+        .eq('id', companionGuest.id);
+    }
+
+    // Acompañante NUEVO (no estaba en la DB) → INSERT solo con nombre, sin acompanante_id propio
+    if (!companionGuest && companionChecked && attending === 'asiste') {
+      const compNombre   = document.getElementById('comp-nombre')?.value?.trim();
+      const compApellido = document.getElementById('comp-apellido')?.value?.trim() || '';
+      const compDietary  = document.getElementById('companion-dietary')?.value || null;
+      if (compNombre) {
+        const { data: newComp } = await db
+          .from('invitados')
+          .insert({
+            nombre:                    compNombre,
+            apellido:                  compApellido,
+            asistencia_status:         'asiste',
+            indicaciones_alimentarias: compDietary,
+            rsvp_at:                   new Date().toISOString(),
+            // acompanante_id: null — el acompañante no referencia a nadie
+          })
+          .select('id')
+          .single();
+
+        // El invitado ORIGINAL es quien guarda la referencia al acompañante
+        if (newComp?.id) {
+          await db
+            .from('invitados')
+            .update({ acompanante_id: newComp.id })
+            .eq('id', currentGuest.id);
+        }
+      }
+    }
+
+    // Mostrar pantalla de éxito
+    showSuccess(attending);
+
+  } catch (err) {
+    console.error('RSVP error:', err);
+    showToast('❌ Ocurrió un error inesperado. Intentá de nuevo.');
+    resetBtn();
+  }
+}
+
 /* ——— RESET SUBMIT BUTTON ——— */
 function resetBtn() {
   const btn = document.getElementById('submit-btn');
@@ -1663,7 +1748,6 @@ function buildCalendarURL() {
   }
 }
 
->>>>>>> Stashed changes
 /* ——— ADD TO CALENDAR ——— */
 function addToCalendar() {
   const title  = encodeURIComponent('Casamiento de Guada & Marco 💍');

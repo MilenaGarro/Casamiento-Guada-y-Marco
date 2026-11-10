@@ -156,23 +156,6 @@
     .kpi-sub{font-size:11px;color:var(--gray-lt);margin-top:6px}
     .kpi-cta{font-size:10px;color:var(--burgundy-xlt);margin-top:4px;letter-spacing:.03em}
 
-    /* Stat de menores — línea sutil debajo de KPIs */
-    .minor-stat{display:flex;align-items:center;gap:14px;padding:10px 24px 0;flex-shrink:0}
-    .minor-stat-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--gray);cursor:pointer;transition:color .15s;border:none;background:none;font-family:var(--ff-sans);padding:0}
-    .minor-stat-chip:hover{color:var(--burgundy)}
-    .minor-stat-chip strong{color:var(--black);font-weight:500}
-    .minor-stat-chip.zero{opacity:.35;cursor:default;pointer-events:none}
-
-    /* Menores a cargo — bloque en modal de adulto */
-    .menores-cargo{background:rgba(196,160,68,.06);border:1px solid rgba(196,160,68,.2);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-    .menores-cargo-title{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#8B6914;font-weight:500}
-    .menor-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--black)}
-    .menor-row-name{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;transition:color .12s}
-    .menor-row-name:hover{color:var(--burgundy)}
-
-    /* Badge menor — aparece inline en la celda nombre */
-    .badge-menor{display:inline-flex;align-items:center;gap:3px;background:rgba(196,160,68,.1);border:1px solid rgba(196,160,68,.25);border-radius:20px;padding:1px 7px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8B6914;margin-left:5px;vertical-align:middle;font-weight:500}
-
     /* ══════════════
        SECTION HEADER — separador entre stats y lista
     ══════════════ */
@@ -601,17 +584,6 @@
       <div class="fg"><label class="fl">Restricción alimentaria</label><input class="fi" type="text" id="edit-diet" placeholder="Ninguna"/></div>
       <div class="modal-rule"></div>
       <label class="comp-row">
-        <input type="checkbox" id="edit-es-menor" onchange="toggleMenor('edit',this.checked)"/>
-        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
-        <span class="comp-txt">Es menor de edad 👶</span>
-      </label>
-      <div class="comp-block" id="edit-menor-block" style="display:none">
-        <div class="fg"><label class="fl">Adulto responsable</label>
-          <select class="fs" id="edit-adulto-id"><option value="">— Sin asignar —</option></select>
-        </div>
-      </div>
-      <div class="modal-rule"></div>
-      <label class="comp-row">
         <input type="checkbox" id="edit-has-comp" onchange="toggleComp('edit',this.checked)"/>
         <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
         <span class="comp-txt">Tiene acompañante</span>
@@ -624,7 +596,6 @@
         </div>
         <div class="fg"><label class="fl">Restricción</label><input class="fi" type="text" id="edit-comp-diet" placeholder="Ninguna"/></div>
       </div>
-      <div id="edit-menores-cargo-wrap"></div>
       <div class="modal-rule"></div>
       <div class="fg">
         <label class="fl">Link personalizado</label>
@@ -661,17 +632,6 @@
         </select>
       </div>
       <div class="fg"><label class="fl">Restricción alimentaria</label><input class="fi" type="text" id="add-diet" placeholder="Dejar en blanco si no tiene"/></div>
-      <div class="modal-rule"></div>
-      <label class="comp-row">
-        <input type="checkbox" id="add-es-menor" onchange="toggleMenor('add',this.checked)"/>
-        <span class="comp-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span>
-        <span class="comp-txt">Es menor de edad 👶</span>
-      </label>
-      <div class="comp-block" id="add-menor-block" style="display:none">
-        <div class="fg"><label class="fl">Adulto responsable</label>
-          <select class="fs" id="add-adulto-id"><option value="">— Sin asignar —</option></select>
-        </div>
-      </div>
       <div class="modal-rule"></div>
       <label class="comp-row">
         <input type="checkbox" id="add-has-comp" onchange="toggleComp('add',this.checked)"/>
@@ -772,13 +732,6 @@
             <div class="kpi-cta">Ver lista →</div>
           </div>
         </div>
-      </div>
-
-      <!-- Stat menores — línea sutil -->
-      <div class="minor-stat" id="minor-stat-row" style="display:none">
-        <button class="minor-stat-chip" id="minor-chip" onclick="openKpiModal('menor')">
-          👶 <strong id="k-menor">0</strong> menores en lista
-        </button>
       </div>
 
       <!-- Lista de invitados: separador + acciones -->
@@ -942,7 +895,7 @@ async function load(){
   const btn=document.getElementById('btn-refresh');
   if(btn)btn.classList.add('spinning');
   const{data,error}=await db.from('invitados')
-    .select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,rsvp_at,acompanante_id,es_menor,adulto_responsable_id')
+    .select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,rsvp_at,acompanante_id')
     .order('apellido',{ascending:true});
   if(btn)btn.classList.remove('spinning');
   if(error){document.getElementById('tbody').innerHTML='<tr class="empty-row"><td colspan="6">Error al cargar datos.</td></tr>';return;}
@@ -962,11 +915,6 @@ function updateKPIs(){
   sv('k-asisten',asisten);sv('k-no',no);sv('k-pend',pend);sv('k-rest',rest);
   const pct=n=>total?Math.round(n/total*100)+'% del total':'';
   sv('k-asisten-pct',pct(asisten));sv('k-no-pct',pct(no));sv('k-pend-pct',pct(pend));
-  // Menores
-  const menores=all.filter(g=>g.es_menor);
-  sv('k-menor',menores.length);
-  const row=document.getElementById('minor-stat-row');
-  if(row)row.style.display=menores.length?'flex':'none';
 }
 function sv(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 
@@ -1051,9 +999,8 @@ function render(){
       const comp=g.acompanante_id&&cm[g.acompanante_id]?esc(cm[g.acompanante_id]):'<span style="color:var(--gray-lt)">—</span>';
       const diet=g.indicaciones_alimentarias?esc(g.indicaciones_alimentarias):'<span style="color:var(--gray-lt)">—</span>';
       const fecha=g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}):'<span style="color:var(--gray-lt)">—</span>';
-      const menorBadge=g.es_menor?'<span class="badge-menor">👶 menor</span>':'';
       return`<tr onclick="openEditModal('${g.id}')">
-        <td class="td-name">${esc(g.apellido)}, ${esc(g.nombre)}${menorBadge}</td>
+        <td class="td-name">${esc(g.apellido)}, ${esc(g.nombre)}</td>
         <td><span class="badge ${bcl}">${btx}</span></td>
         <td class="td-diet col-diet">${diet}</td>
         <td class="col-comp" style="font-size:13px;color:var(--gray)">${comp}</td>
@@ -1089,30 +1036,12 @@ function openEditModal(id){
   document.getElementById('edit-apellido').value=g.apellido||'';
   document.getElementById('edit-status').value=g.asistencia_status||'pendiente';
   document.getElementById('edit-diet').value=g.indicaciones_alimentarias||'';
-  // Menor
-  document.getElementById('edit-es-menor').checked=!!g.es_menor;
-  document.getElementById('edit-menor-block').style.display=g.es_menor?'flex':'none';
-  fillAdultoSelect('edit-adulto-id',g.adulto_responsable_id,g.id);
   const comp=g.acompanante_id?all.find(x=>x.id===g.acompanante_id):null;
   document.getElementById('edit-has-comp').checked=!!comp;
   document.getElementById('edit-comp').style.display=comp?'flex':'none';
   document.getElementById('edit-comp-nombre').value=comp?.nombre||'';
   document.getElementById('edit-comp-apellido').value=comp?.apellido||'';
   document.getElementById('edit-comp-diet').value=comp?.indicaciones_alimentarias||'';
-  // Menores a cargo (si este invitado es adulto)
-  const wrap=document.getElementById('edit-menores-cargo-wrap');
-  if(wrap){
-    const menoresACargo=all.filter(x=>x.adulto_responsable_id===g.id);
-    if(!g.es_menor&&menoresACargo.length){
-      wrap.innerHTML=`<div class="menores-cargo">
-        <div class="menores-cargo-title">👶 Menores a cargo (${menoresACargo.length})</div>
-        ${menoresACargo.map(m=>`<div class="menor-row">
-          <span class="menor-row-name" onclick="switchToMenor('${m.id}')">${esc(m.apellido)}, ${esc(m.nombre)}</span>
-          <span style="font-size:10px;color:var(--gray)">${m.asistencia_status==='asiste'?'Asiste':m.asistencia_status==='no_asiste'?'No asiste':'Pendiente'}</span>
-        </div>`).join('')}
-      </div>`;
-    }else{wrap.innerHTML='';}
-  }
   const idx=window.location.pathname.replace('dashboard.html','index.html');
   document.getElementById('edit-link').value=`${window.location.origin}${idx}?id=${g.id}`;
   document.getElementById('edit-save-btn').disabled=false;
@@ -1120,22 +1049,6 @@ function openEditModal(id){
   openModal('edit-overlay');
 }
 function toggleComp(prefix,checked){document.getElementById(prefix+'-comp').style.display=checked?'flex':'none';}
-
-function switchToMenor(id){
-  closeModal('edit-overlay');
-  setTimeout(()=>openEditModal(id),200);
-}
-
-function toggleMenor(prefix,checked){
-  document.getElementById(prefix+'-menor-block').style.display=checked?'flex':'none';
-}
-
-function fillAdultoSelect(selectId, currentAdultoId, excludeId){
-  const sel=document.getElementById(selectId);if(!sel)return;
-  const adultos=all.filter(g=>!g.es_menor&&g.id!==excludeId);
-  sel.innerHTML='<option value="">— Sin asignar —</option>'
-    +adultos.map(g=>`<option value="${g.id}"${g.id===currentAdultoId?' selected':''}>${esc(g.apellido)}, ${esc(g.nombre)}</option>`).join('');
-}
 
 async function saveEdit(){
   if(!editingGuest)return;
@@ -1148,9 +1061,7 @@ async function saveEdit(){
   const cApellido=document.getElementById('edit-comp-apellido').value.trim();
   if(hasComp&&(!cNombre||!cApellido)){showToast('Completá datos del acompañante.','err');btn.disabled=false;btn.textContent='Guardar cambios';return;}
   const existComp=editingGuest.acompanante_id?all.find(x=>x.id===editingGuest.acompanante_id):null;
-  const esMenor=document.getElementById('edit-es-menor').checked;
-  const adultoId=esMenor?(document.getElementById('edit-adulto-id').value||null):null;
-  const payload={nombre,apellido,asistencia_status:document.getElementById('edit-status').value,indicaciones_alimentarias:document.getElementById('edit-diet').value.trim()||null,es_menor:esMenor,adulto_responsable_id:adultoId};
+  const payload={nombre,apellido,asistencia_status:document.getElementById('edit-status').value,indicaciones_alimentarias:document.getElementById('edit-diet').value.trim()||null};
   if(hasComp){
     if(existComp){
       await db.from('invitados').update({nombre:cNombre,apellido:cApellido,indicaciones_alimentarias:document.getElementById('edit-comp-diet').value.trim()||null}).eq('id',existComp.id);
@@ -1177,9 +1088,6 @@ function copyLink(){navigator.clipboard.writeText(document.getElementById('edit-
 
 function openAddModal(){
   ['add-nombre','add-apellido','add-diet','add-comp-nombre','add-comp-apellido','add-comp-diet'].forEach(id=>{document.getElementById(id).value='';});
-  document.getElementById('add-es-menor').checked=false;
-  document.getElementById('add-menor-block').style.display='none';
-  fillAdultoSelect('add-adulto-id',null,null);
   document.getElementById('add-status').value='pendiente';
   document.getElementById('add-has-comp').checked=false;
   document.getElementById('add-comp').style.display='none';
@@ -1196,9 +1104,7 @@ async function saveAdd(){
   const cNombre=document.getElementById('add-comp-nombre').value.trim();
   const cApellido=document.getElementById('add-comp-apellido').value.trim();
   if(hasComp&&(!cNombre||!cApellido)){showToast('Completá datos del acompañante.','err');btn.disabled=false;btn.textContent='Agregar invitado';return;}
-  const addEsMenor=document.getElementById('add-es-menor').checked;
-  const addAdultoId=addEsMenor?(document.getElementById('add-adulto-id').value||null):null;
-  const{data:g1,error:e1}=await db.from('invitados').insert({nombre,apellido,asistencia_status:document.getElementById('add-status').value,indicaciones_alimentarias:document.getElementById('add-diet').value.trim()||null,es_menor:addEsMenor,adulto_responsable_id:addAdultoId}).select().single();
+  const{data:g1,error:e1}=await db.from('invitados').insert({nombre,apellido,asistencia_status:document.getElementById('add-status').value,indicaciones_alimentarias:document.getElementById('add-diet').value.trim()||null}).select().single();
   if(e1){showToast('Error al agregar.','err');btn.disabled=false;btn.textContent='Agregar invitado';return;}
   if(hasComp){
     const{data:g2}=await db.from('invitados').insert({nombre:cNombre,apellido:cApellido,asistencia_status:'pendiente',indicaciones_alimentarias:document.getElementById('add-comp-diet').value.trim()||null,acompanante_id:g1.id}).select().single();
@@ -1209,10 +1115,9 @@ async function saveAdd(){
 
 /* KPI Modal */
 function openKpiModal(type){
-  const titles={asiste:'Asisten',no_asiste:'No asisten',pendiente:'Sin respuesta',restriccion:'Con restricciones',menor:'Menores de edad'};
+  const titles={asiste:'Asisten',no_asiste:'No asisten',pendiente:'Sin respuesta',restriccion:'Con restricciones'};
   let guests=type==='restriccion'?all.filter(g=>g.indicaciones_alimentarias?.trim())
     :type==='pendiente'?all.filter(g=>!g.asistencia_status||g.asistencia_status==='pendiente')
-    :type==='menor'?all.filter(g=>g.es_menor)
     :all.filter(g=>g.asistencia_status===type);
   guests=[...guests].sort((a,b)=>(a.apellido+a.nombre).localeCompare(b.apellido+b.nombre,'es'));
   sv('kpi-modal-title',titles[type]);
@@ -1220,9 +1125,7 @@ function openKpiModal(type){
   document.getElementById('kpi-modal-list').innerHTML=!guests.length
     ?'<div style="text-align:center;padding:36px 22px;color:var(--gray-lt);font-size:13px">Sin resultados</div>'
     :guests.map(g=>{
-      const adulto=type==='menor'&&g.adulto_responsable_id?all.find(x=>x.id===g.adulto_responsable_id):null;
       const detail=type==='restriccion'?esc(g.indicaciones_alimentarias)
-        :type==='menor'?(adulto?'A cargo de: '+esc(adulto.nombre)+' '+esc(adulto.apellido):'Sin adulto asignado')
         :g.rsvp_at?'Confirmó el '+new Date(g.rsvp_at).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'Sin fecha de confirmación';
       return`<div class="kpi-mrow" onclick="openKpiGuest('${g.id}')"><div><div class="kpi-mname">${esc(g.apellido)}, ${esc(g.nombre)}</div><div class="kpi-mdetail">${detail}</div></div><span style="color:var(--gray-lt);font-size:16px">›</span></div>`;
     }).join('');
@@ -1234,27 +1137,10 @@ function openModal(id){document.getElementById(id).classList.add('open');documen
 function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
 
 function exportCSV(){
-  const byId=Object.fromEntries(all.map(g=>[g.id,g]));
-  const rows=all.map(g=>{
-    const st=g.asistencia_status==='asiste'?'Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente';
-    const comp=g.acompanante_id?byId[g.acompanante_id]:null;
-    const menoresACargo=all.filter(m=>m.adulto_responsable_id===g.id);
-    return{
-      'Apellido':g.apellido||'',
-      'Nombre':g.nombre||'',
-      'Estado':st,
-      'Menor de edad':g.es_menor?'Sí':'',
-      'Adulto responsable':g.es_menor&&g.adulto_responsable_id&&byId[g.adulto_responsable_id]
-        ?(byId[g.adulto_responsable_id].apellido+', '+byId[g.adulto_responsable_id].nombre):'',
-      'Menores a cargo':menoresACargo.length
-        ?menoresACargo.map(m=>m.apellido+', '+m.nombre).join(' / '):'',
-      'Acompañante':comp?(comp.apellido+', '+comp.nombre):'',
-      'Restricción alimentaria':g.indicaciones_alimentarias||'',
-      'Confirmó':g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR'):'',
-    };
-  });
+  const cm=buildCompMap();
+  const rows=all.map(g=>({'Apellido':g.apellido||'','Nombre':g.nombre||'','Estado':g.asistencia_status==='asiste'?'Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente','Restricción':g.indicaciones_alimentarias||'','Acompañante':g.acompanante_id&&cm[g.acompanante_id]?cm[g.acompanante_id]:'','Confirmó':g.rsvp_at?new Date(g.rsvp_at).toLocaleDateString('es-AR'):''}));
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:18},{wch:18},{wch:12},{wch:10},{wch:22},{wch:26},{wch:22},{wch:26},{wch:12}];
+  ws['!cols']=[{wch:18},{wch:18},{wch:12},{wch:26},{wch:22},{wch:12}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invitados');
   XLSX.writeFile(wb,'invitados-'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
@@ -1351,8 +1237,7 @@ function renderTablesGrid(){
     const pct=Math.min(100,count/mesa.capacidad_max*100);
     const tags=mesaGuests.map(g=>{
       const dot=g.asistencia_status==='asiste'?'🟢':'🟡';
-      const menorMark=g.es_menor?' 👶':'';
-      return`<span class="g-tag">${dot} <button class="g-tag-name" onclick="openGuestFromMesa('${g.id}')" title="Editar invitado">${esc(g.nombre||'?')} ${esc(g.apellido||'')}${menorMark}</button><button class="g-tag-x" onclick="unassignGuest('${g.id}')" title="Quitar de la mesa">×</button></span>`;
+      return`<span class="g-tag">${dot} <button class="g-tag-name" onclick="openGuestFromMesa('${g.id}')" title="Editar invitado">${esc(g.nombre||'?')} ${esc(g.apellido||'')}</button><button class="g-tag-x" onclick="unassignGuest('${g.id}')" title="Quitar de la mesa">×</button></span>`;
     }).join('');
     return`<div class="t-card${isFull?' is-full':''}" id="tc-${mesa.id}"
       ondragover="onDragOver(event,'${mesa.id}')"
