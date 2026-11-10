@@ -297,6 +297,8 @@
     .g-tag{display:inline-flex;align-items:center;gap:3px;background:rgba(107,26,42,.07);border:1px solid rgba(107,26,42,.15);border-radius:20px;padding:3px 6px 3px 9px;font-size:11px;color:var(--burgundy)}
     .g-tag-x{background:none;border:none;color:var(--burgundy-xlt);cursor:pointer;padding:0 1px;display:flex;align-items:center;font-size:15px;line-height:1;transition:color .12s}
     .g-tag-x:hover{color:#EF5350}
+    .g-tag-name{background:none;border:none;color:var(--burgundy);cursor:pointer;font-size:11px;padding:0;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;transition:color .12s;font-family:inherit}
+    .g-tag-name:hover{color:var(--black)}
     .t-drop-hint{font-size:11px;color:var(--gray-lt);font-style:italic;font-family:var(--ff-serif)}
     .tables-empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px;text-align:center}
     .tables-empty-icon{font-size:32px;opacity:.25;margin-bottom:12px}
@@ -311,6 +313,26 @@
     .a-dd-item.full{opacity:.35;pointer-events:none;cursor:default}
     .a-dd-slots{font-size:10px;color:var(--gray)}
     .a-dd-empty{padding:12px 13px;font-size:12px;color:var(--gray);font-style:italic}
+
+    /* ══ GUEST PICKER (agregar desde tarjeta de mesa) ══ */
+    #guest-picker-dd{position:fixed;background:#fff;border:1px solid var(--cream-border);border-radius:8px;width:260px;z-index:350;box-shadow:0 8px 32px rgba(26,26,26,.16);overflow:hidden;display:none}
+    .gp-hdr{padding:9px 13px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--cream-border);background:var(--cream-dark);display:flex;justify-content:space-between;align-items:center}
+    .gp-hdr-close{background:none;border:none;color:var(--gray-lt);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;transition:color .12s}
+    .gp-hdr-close:hover{color:var(--black)}
+    .gp-search{width:100%;border:none;border-bottom:1px solid var(--cream-border);padding:9px 13px;font-family:var(--ff-sans);font-size:12px;color:var(--black);outline:none;background:#fff}
+    .gp-search::placeholder{color:var(--gray-lt)}
+    .gp-list{max-height:230px;overflow-y:auto}
+    .gp-list::-webkit-scrollbar{width:4px}
+    .gp-list::-webkit-scrollbar-thumb{background:var(--cream-border);border-radius:2px}
+    .gp-item{padding:10px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:12px;color:var(--black);transition:background .12s;gap:8px}
+    .gp-item:hover{background:rgba(107,26,42,.05)}
+    .gp-status{font-size:10px;color:var(--gray);flex-shrink:0}
+    .gp-empty{padding:16px 13px;font-size:12px;color:var(--gray-lt);font-style:italic;text-align:center}
+
+    /* Botón agregar invitado en tarjeta de mesa */
+    .t-add-btn{display:flex;align-items:center;justify-content:center;gap:5px;background:none;border:none;border-top:1px dashed var(--cream-border);color:var(--gray);font-family:var(--ff-sans);font-size:11px;padding:9px 12px;cursor:pointer;transition:all .15s;width:100%}
+    .t-add-btn:hover{color:var(--burgundy);background:rgba(107,26,42,.03)}
+    .t-add-btn svg{flex-shrink:0}
 
     /* ══ ALERT ══ */
     #cap-alert{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--black);color:#fff;border-radius:6px;padding:10px 16px;font-size:12px;z-index:400;transition:transform .28s;display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.2);pointer-events:none;white-space:nowrap}
@@ -490,6 +512,9 @@
 
 <!-- ASSIGN DROPDOWN -->
 <div id="assign-dd"></div>
+
+<!-- GUEST PICKER (agregar invitado a mesa desde tarjeta) -->
+<div id="guest-picker-dd"></div>
 
 <!-- MESA MODAL -->
 <div id="mesa-modal">
@@ -1052,7 +1077,12 @@ async function saveEdit(){
   const{error}=await db.from('invitados').update(payload).eq('id',editingGuest.id);
   if(error){showToast('Error al guardar.','err');btn.disabled=false;btn.textContent='Guardar cambios';return;}
   const idx=all.findIndex(x=>x.id===editingGuest.id);if(idx>=0)Object.assign(all[idx],payload);
+  // Sincronizar también con guestPool (mesas) si el invitado está ahí
+  const pi=guestPool.findIndex(x=>x.id===editingGuest.id);
+  if(pi>=0)Object.assign(guestPool[pi],{nombre:payload.nombre,apellido:payload.apellido,asistencia_status:payload.asistencia_status,indicaciones_alimentarias:payload.indicaciones_alimentarias});
   showToast('Cambios guardados ✓','ok');closeModal('edit-overlay');updateKPIs();applyFilters();
+  // Si la sección de mesas está activa, re-renderizar
+  if(document.getElementById('sec-mesas')?.classList.contains('active'))renderMesas();
 }
 function copyLink(){navigator.clipboard.writeText(document.getElementById('edit-link').value).then(()=>showToast('Link copiado ✓','ok'));}
 
@@ -1134,7 +1164,7 @@ async function loadMesas(){
 
   const[{data:mesasData,error:e1},{data:guestsData,error:e2}]=await Promise.all([
     db.from('mesas').select('*').order('numero'),
-    db.from('invitados').select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,mesa_id').order('apellido')
+    db.from('invitados').select('id,nombre,apellido,asistencia_status,indicaciones_alimentarias,mesa_id,acompanante_id,rsvp_at').order('apellido')
   ]);
 
   if(e1||e2){
@@ -1207,7 +1237,7 @@ function renderTablesGrid(){
     const pct=Math.min(100,count/mesa.capacidad_max*100);
     const tags=mesaGuests.map(g=>{
       const dot=g.asistencia_status==='asiste'?'🟢':'🟡';
-      return`<span class="g-tag" title="${g.asistencia_status==='asiste'?'Confirmado':'Pendiente'}">${dot} ${g.nombre||'?'} ${g.apellido||''}<button class="g-tag-x" onclick="unassignGuest('${g.id}')" title="Quitar">×</button></span>`;
+      return`<span class="g-tag">${dot} <button class="g-tag-name" onclick="openGuestFromMesa('${g.id}')" title="Editar invitado">${esc(g.nombre||'?')} ${esc(g.apellido||'')}</button><button class="g-tag-x" onclick="unassignGuest('${g.id}')" title="Quitar de la mesa">×</button></span>`;
     }).join('');
     return`<div class="t-card${isFull?' is-full':''}" id="tc-${mesa.id}"
       ondragover="onDragOver(event,'${mesa.id}')"
@@ -1235,6 +1265,10 @@ function renderTablesGrid(){
         <div class="t-bar"><div class="t-bar-fill${isFull?' full':''}" style="width:${pct}%"></div></div>
       </div>
       <div class="t-guests">${tags||'<span class="t-drop-hint">Arrastrá invitados aquí</span>'}</div>
+      ${!isFull?`<button class="t-add-btn" onclick="openGuestPicker(event,'${mesa.id}')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar invitado
+      </button>`:''}
     </div>`;
   }).join('');
 }
@@ -1310,6 +1344,88 @@ function openAssignDD(e,gid){
 }
 function doAssign(gid,tid){closeAssignDD();assignGuest(gid,tid);}
 function closeAssignDD(){const dd=document.getElementById('assign-dd');if(dd)dd.style.display='none';}
+
+/* ══ GUEST PICKER — agregar invitado a mesa desde la tarjeta ══ */
+let pickerMesaId=null;
+
+function openGuestPicker(e,mesaId){
+  e.stopPropagation();
+  pickerMesaId=mesaId;
+  const mesa=mesas.find(m=>m.id===mesaId);
+  buildPickerDD(mesa,'');
+  const dd=document.getElementById('guest-picker-dd');
+  dd.style.display='block';
+  // Posicionar inteligentemente
+  const btn=e.currentTarget||e.target;
+  const rect=btn.getBoundingClientRect();
+  const left=Math.max(8,Math.min(rect.left,window.innerWidth-268));
+  const spaceBelow=window.innerHeight-(rect.bottom+6);
+  if(spaceBelow<260&&rect.top>260){
+    dd.style.top='';dd.style.bottom=(window.innerHeight-rect.top+4)+'px';
+  }else{
+    dd.style.bottom='';dd.style.top=(rect.bottom+4)+'px';
+  }
+  dd.style.left=left+'px';
+  // Focus al buscador
+  setTimeout(()=>dd.querySelector('.gp-search')?.focus(),50);
+}
+
+function buildPickerDD(mesa,q){
+  const dd=document.getElementById('guest-picker-dd');
+  const unassigned=guestPool.filter(g=>!g.mesa_id&&
+    (!q||(g.nombre+' '+g.apellido).toLowerCase().includes(q.toLowerCase())));
+  const mesaNombre=esc(mesa?.nombre||'mesa');
+  const items=unassigned.length
+    ?unassigned.map(g=>{
+        const st=g.asistencia_status==='asiste'?'✓ Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente';
+        return`<div class="gp-item" onclick="pickGuest('${g.id}')">
+          <span>${esc(g.nombre||'?')} ${esc(g.apellido||'')}</span>
+          <span class="gp-status">${st}</span>
+        </div>`;
+      }).join('')
+    :`<div class="gp-empty">${q?'Sin resultados.':'Todos los invitados ya tienen mesa.'}</div>`;
+  dd.innerHTML=`
+    <div class="gp-hdr">
+      <span>Agregar a ${mesaNombre}</span>
+      <button class="gp-hdr-close" onclick="closeGuestPicker()">×</button>
+    </div>
+    <input class="gp-search" placeholder="Buscar invitado…" value="${esc(q)}"
+      oninput="filterPicker(this.value)" id="gp-search"/>
+    <div class="gp-list" id="gp-list">${items}</div>`;
+}
+
+function filterPicker(q){
+  const mesa=mesas.find(m=>m.id===pickerMesaId);
+  buildPickerDD(mesa,q);
+  // Re-focus sin mover el caret
+  const inp=document.getElementById('gp-search');
+  if(inp){const v=inp.value;inp.focus();inp.value='';inp.value=v;}
+}
+
+function pickGuest(gid){
+  const tid=pickerMesaId; // guardar antes de cerrar
+  closeGuestPicker();
+  if(tid)assignGuest(gid,tid);
+}
+
+function closeGuestPicker(){
+  document.getElementById('guest-picker-dd').style.display='none';
+  pickerMesaId=null;
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#guest-picker-dd')&&!e.target.closest('.t-add-btn'))closeGuestPicker();
+});
+
+/* Editar invitado desde mesas — sincroniza all[] y abre el modal */
+function openGuestFromMesa(gid){
+  // Asegurar que el invitado esté en all[] para que el modal funcione
+  if(!all.find(x=>x.id===gid)){
+    const g=guestPool.find(x=>x.id===gid);
+    if(g)all.push({...g});
+  }
+  openEditModal(gid);
+}
 
 /* Mesa modal */
 function openMesaModal(){
