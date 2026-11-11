@@ -839,6 +839,9 @@
           <span class="topbar-title">Gestión de Mesas</span>
         </div>
         <div class="topbar-right">
+          <button class="btn-icon" onclick="exportCSV()" title="Exportar Excel">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
           <button class="btn-add" onclick="openMesaModal()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             <span>Nueva Mesa</span>
@@ -1233,6 +1236,25 @@ function exportCSV(){
   const ws=XLSX.utils.json_to_sheet(rows);
   ws['!cols']=[{wch:18},{wch:18},{wch:12},{wch:10},{wch:22},{wch:26},{wch:22},{wch:26},{wch:12}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invitados');
+  // Hoja Mesas
+  if(mesas&&mesas.length){
+    const byId2=Object.fromEntries((guestPool.length?guestPool:all).map(g=>[g.id,g]));
+    const mesaRows=[];
+    mesas.slice().sort((a,b)=>a.numero-b.numero).forEach(m=>{
+      const asig=guestPool.filter(g=>g.mesa_id===m.id).sort((a,b)=>(a.apellido+a.nombre).localeCompare(b.apellido+b.nombre,'es'));
+      if(!asig.length){
+        mesaRows.push({'Mesa':m.nombre,'Número':m.numero||'','Capacidad':m.capacidad_max,'Apellido':'','Nombre':'','Estado':'','Restricción':''});
+      }else{
+        asig.forEach((g,i)=>{
+          const st=g.asistencia_status==='asiste'?'Asiste':g.asistencia_status==='no_asiste'?'No asiste':'Pendiente';
+          mesaRows.push({'Mesa':i===0?m.nombre:'','Número':i===0?(m.numero||''):'','Capacidad':i===0?m.capacidad_max:'','Apellido':g.apellido||'','Nombre':g.nombre||'','Estado':st,'Restricción':g.indicaciones_alimentarias||''});
+        });
+      }
+    });
+    const ws2=XLSX.utils.json_to_sheet(mesaRows);
+    ws2['!cols']=[{wch:22},{wch:8},{wch:10},{wch:18},{wch:18},{wch:12},{wch:26}];
+    XLSX.utils.book_append_sheet(wb,ws2,'Mesas');
+  }
   XLSX.writeFile(wb,'invitados-'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
